@@ -10,9 +10,10 @@ namespace Swewep_Line_Algorithm
     {
         public Vector3 p;
     }
+
     public static class LS
     {
-        private static SortedSet<Segment>  FixDistances(Point p, SortedSet<Segment> T)
+        private static SortedSet<Segment> FixDistances(Point p, SortedSet<Segment> T)
         {
             SegmentComparer comp = new SegmentComparer();
             comp.P = p;
@@ -30,6 +31,7 @@ namespace Swewep_Line_Algorithm
                 if (s == segment) return previous;
                 previous = segment;
             }
+
             return null;
         }
 
@@ -41,9 +43,10 @@ namespace Swewep_Line_Algorithm
                 if (s == segment) return previous;
                 previous = segment;
             }
+
             return null;
         }
-        
+
         public static Segment NearestLeft(Point p, IEnumerable<Segment> T)
         {
             Segment minDistance = null;
@@ -58,9 +61,10 @@ namespace Swewep_Line_Algorithm
                     minDistance = segment;
                 }
             }
+
             return minDistance;
         }
-        
+
         public static Segment NearestRight(Point p, IEnumerable<Segment> T)
         {
             Segment minDistance = null;
@@ -73,6 +77,7 @@ namespace Swewep_Line_Algorithm
                     minDistance = segment;
                 }
             }
+
             return minDistance;
         }
 
@@ -87,9 +92,11 @@ namespace Swewep_Line_Algorithm
                                              intersection.x > point.x))
                 {
                     intersection.Label = "x" + Mathf.Min(sl.num, sr.num) + "" + Mathf.Max(sl.num, sr.num);
-                    if (!sortedDictionary.ContainsKey(intersection)) sortedDictionary[intersection] = new EventPoint(sl);
+                    if (!sortedDictionary.ContainsKey(intersection))
+                        sortedDictionary[intersection] = new EventPoint(sl);
                 }
             }
+
             return null;
         }
 
@@ -107,23 +114,24 @@ namespace Swewep_Line_Algorithm
             Debug.Log(("Sweep"));
             foreach (var segment in T)
             {
-                Debug.Log(segment+ " ");
+                Debug.Log(segment + " ");
             }
         }
 
         private static void DebugIntersection(Segment bRight, Segment bLeft, Point p)
         {
-            Debug.Log("Testing Intersection  for "+ bLeft + " " + bRight + " = " + p);
+            Debug.Log("Testing Intersection  for " + bLeft + " " + bRight + " = " + p);
         }
 
         // 스윕라인의 교차점을 구하는 문제
         // Plane안에 있는 Segment들을 넣는다.
-        public static IEnumerator SweepIntersections(List<Segment> segments, List<Point> intersect, DebugPoint debugPoint, float debugWaitSecond = 0.2f, bool debug = false)
+        public static IEnumerator SweepIntersections(List<Segment> segments, List<Point> intersect,
+            DebugPoint debugPoint, float debugWaitSecond = 0.2f, bool debug = false)
         {
             // 이벤트Q
             // 이벤트 큐로해도 상관은 없지만 중복된 Event Point를 안넣으려면 BST로 해야한다.
-            // Ket Value를 Comparerer 함수를 기준으로 정렬시킨다.
-            
+            // Key Value를 Comparerer 함수를 기준으로 정렬시킨다.
+
             // 초기화 방법은 이렇다
             // 세그먼트의 endpoint를 Q에 삽입하되, 상단 끝점이 삽입될 때는 해당 세그먼트가 함께 저장되어야한다.
             SortedDictionary<Point, EventPoint> Q = new SortedDictionary<Point, EventPoint>(new PointComparer());
@@ -131,11 +139,11 @@ namespace Swewep_Line_Algorithm
             {
                 // 세그먼트의 끝점들을 Q에 삽입하되, **upper endpoint**가 삽입될 때는 해당 세그먼트가 함께 저장되어야 한다.
                 // 기존 시작 값이 있는 경우 대기열을 채운 다음 해당 목록에 추가한다.
-                if(Q.ContainsKey(segment.Start)) Q[segment.Start].Segments.Add(segment);
+                if (Q.ContainsKey(segment.Start)) Q[segment.Start].Segments.Add(segment);
                 // 그렇지 않다면 새 Event를 추가한다.
                 else Q.Add(segment.Start, new EventPoint(segment));
                 // 선분의 End가 Q에 등록되지 않았다면 End도 Key에 등록시킨다.
-                if(!Q.ContainsKey(segment.End)) Q.Add(segment.End, new EventPoint());
+                if (!Q.ContainsKey(segment.End)) Q.Add(segment.End, new EventPoint());
             }
 
             // 레드블랙이진트리로 구현되어있고 top retrieving(검색)이 가능하다.
@@ -147,7 +155,7 @@ namespace Swewep_Line_Algorithm
                 EventPoint e = Q[p];
                 Q.Remove(p);
                 debugPoint.p = p.ToVector();
-                
+
                 // LowerPoint
                 // s를 삭제한다. 
                 // sl과 sr이 sweep line 아래에서 교차하는 경우 T.에서 s의 왼쪽과 오른쪽 이웃이 된 다음 교차점을 Q의 이벤트로 삽입합니다
@@ -160,7 +168,7 @@ namespace Swewep_Line_Algorithm
                 foreach (var segment in T)
                 {
                     // End == LowerPoint일 경우 리스트에 담고 나중에 삭제한다.
-                    if(segment.End == p) lower.Add(segment);
+                    if (segment.End == p) lower.Add(segment);
                     // Intercepting Point == 교차점이고 StartPoint와 겹치지 않을경우
                     // 이 뜻은 위쪽 끝에서 교차하고 있다는 것을 의미하며 이미 목록에 포함하고 아래쪽을 확인하지 않는다.
                     // 왜냐하면 위 If문에서 그것을 검증해주기 떄문이다.
@@ -168,14 +176,14 @@ namespace Swewep_Line_Algorithm
                     // 만약 s'의 새 왼쪽 이웃이 스윕라인 아래서 교차한다면 교차점을 Q에 넣는다.
                     // 만약 s'의 새 오른쪽 이웃이 스윕라인 아래서 교차한다면 교차점을 Q에 넣는다.
                     // 교차점을 저장한다
-                    else if(segment.PointIntercept(p) && segment.Start != p) contain.Add(segment);
+                    else if (segment.PointIntercept(p) && segment.Start != p) contain.Add(segment);
                 }
 
                 // 이벤트 포인트가 가리키는 
                 if (e.Segments.Count + lower.Count + contain.Count > 1) intersect.Add(p);
-                
+
                 // 맨 아래 이벤트 포인트라면 Status에서 삭제한다.
-                foreach(var segment in lower)
+                foreach (var segment in lower)
                 {
                     T.Remove(segment);
                 }
@@ -205,7 +213,6 @@ namespace Swewep_Line_Algorithm
                 }
                 else
                 {
-                    
                     // contain을 X값을 기준으로 정렬시킨다.
                     contain.Sort((segment, segment1) =>
                     {
@@ -235,14 +242,15 @@ namespace Swewep_Line_Algorithm
                         DebugIntersection(SPP, sr, j);
                     }
                 }
+
                 yield return new WaitForSeconds(debugWaitSecond);
             }
 
             debugPoint.p.y = 0;
             //return intersect;
         }
-        
-        
+
+
         //         // 스윕라인의 교차점을 구하는 문제
         // // Plane안에 있는 Segment들을 넣는다.
         // public static IEnumerator SweepIntersections(List<Segment> segments, List<Point> intersect, DebugPoint debugPoint, bool debug = false)

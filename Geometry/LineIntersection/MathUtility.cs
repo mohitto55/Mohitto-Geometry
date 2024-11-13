@@ -18,4 +18,6 @@ public static class MathUtility
     public static float Cross2D(Point v1, Point v2) => v1.x * v2.y - v1.y * v2.x;
     
     public static bool FloatZero(float x) => Mathf.Abs(x) < 0.00005f;
+    
+    
 }
