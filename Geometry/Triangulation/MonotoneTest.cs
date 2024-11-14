@@ -15,11 +15,11 @@ namespace Monotone
         private ListBehaviour<HalfEdgeVertex> vertexListCompoennt;
         public TextMeshPro tmppropab;
         private HalfEdgeData EdgeData;
-        private Monotone.VectorValue vectorValue = new Monotone.VectorValue();
+        private Monotone.HalfEdgeDebugValue _halfEdgeDebugValue = new Monotone.HalfEdgeDebugValue();
         private void Awake()
         {
             EdgeData = new HalfEdgeData(MyMath.GetVector2ListFromTransform(vertexs));
-            StartCoroutine(Monotone.MonotoneTriangulation(EdgeData, vectorValue));
+            StartCoroutine(Monotone.MonotoneTriangulation(EdgeData, _halfEdgeDebugValue));
         }
 
         void OnDrawGizmos()
@@ -33,13 +33,15 @@ namespace Monotone
             // }
             
             vertices = EdgeData.vertices;
-            for (int i = 0; i < EdgeData.edges.Count; i++)
+            List<HalfEdge> edges = new List<HalfEdge>();
+            edges = EdgeData.edges;
+
+            for (int i = 0; i < edges.Count; i++)
             {
-                HalfEdge edge = EdgeData.edges[i];
+                HalfEdge edge = edges[i];
                 HalfEdgeVertex vertex = edge.vertex;
                 Gizmos.color = Color.white;
                 Gizmos.DrawLine(vertex.Coordinate, edge.prev.vertex.Coordinate);
-                
                 switch (vertex.type)
                 {
                     case HalfEdgeVertex.Vtype.START:
@@ -64,7 +66,10 @@ namespace Monotone
                 }
                 MyGizmos.DrawWireCicle(vertex.Coordinate, 1, 30);
             }
-            MyGizmos.DrawWireCicle(vectorValue.value, 2, 30);
+
+            _halfEdgeDebugValue.color = Color.red;
+            Gizmos.color = _halfEdgeDebugValue.color;
+            MyGizmos.DrawWireCicle(_halfEdgeDebugValue.value, 2, 30);
 
             GenerateObject<HalfEdgeVertex, TextMeshPro> generateObject = new GenerateObject<HalfEdgeVertex, TextMeshPro>(tmppropab, EventCallback);
             if (vertexListCompoennt == null)

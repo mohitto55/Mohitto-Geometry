@@ -9,199 +9,190 @@ namespace Monotone
 {
     public static class Monotone
     {
-        public static IEnumerator MonotoneTriangulation(HalfEdgeData polygon, VectorValue debugVector)
+        public static IEnumerator MonotoneTriangulation(HalfEdgeData polygon, HalfEdgeDebugValue debugHalfEdgeDebug)
         {
-            HalfEdgeData monotone = MakeMonotone(polygon);
+            HalfEdgeData monotone = MakeMonotone(polygon, polygon.faces.First());
             List<HalfEdgeFace> faces = new List<HalfEdgeFace>();
             for (int i = 0; i < monotone.faces.Count; i++)
             {
                 faces.Add(monotone.faces[i]);
             }
-            //Debug.Log("페이스 갯수 " + monotone.faces.Count);
-
+            // //Debug.Log("페이스 갯수 " + monotone.faces.Count);
             for (int i = 0; i < faces.Count; i++)
             {
                 Debug.Log("페이스 " + i);
-                yield return TravelFaceVertex(polygon, faces[i], debugVector, 0.5f);
-                yield return MonotoneTriangulation(polygon, faces[i], debugVector);
+                yield return HalfEdgeDebug.TravelFaceVertex(polygon, faces[i], debugHalfEdgeDebug, 0.1f);
+                yield return MonotoneTriangulation(polygon, faces[i], debugHalfEdgeDebug, 1f);
             }
             Debug.Log("삼각분할 끝");
             yield return null;
         }
 
-        public static IEnumerator MonotoneTriangulation(HalfEdgeData halfEdgeData, HalfEdgeFace monotoneFace, VectorValue debugVector, float delay = 1)
+        public static IEnumerator MonotoneTriangulation(HalfEdgeData halfEdgeData, HalfEdgeFace monotoneFace, HalfEdgeDebugValue debugHalfEdgeDebug, float delay = 1)
         {
-            halfEdgeData.AddDiagonal(monotoneFace.OuterComponent.vertex, monotoneFace.OuterComponent.next.next.vertex);
-            // SortedSet<HalfEdge> sortedEdges = new SortedSet<HalfEdge>(new MonotoneEdgeTriangulationComparer());
-            // List<HalfEdge> edges = monotoneFace.GetConnectedEdges();
-            // //Debug.Log(edges.Count);
-            // sortedEdges.UnionWith(edges);
-            // Stack<HalfEdge> s = new Stack<HalfEdge>();
-            //
-            // Dictionary<HalfEdge, int> chainDic = new Dictionary<HalfEdge, int>();
-            //
-            // HalfEdge searchEdge = null;
-            // HalfEdge lastEdge = sortedEdges.Last();
-            //
-            //
-            // // Fisrt Vertex의 next가 RightChain일경우
-            // Vector2 topVertex = sortedEdges.First().vertex.Coordinate;
-            // Vector2 prevVertex = sortedEdges.First().prev.vertex.Coordinate;
-            // Vector2 nextVertex = sortedEdges.First().next.vertex.Coordinate;
-            // int safeCount = 0;
-            // if (MyMath.CCW(prevVertex, topVertex, nextVertex) < 0)
-            // {
-            //     searchEdge = sortedEdges.First().next;
-            //     while (lastEdge != searchEdge && safeCount <= sortedEdges.Count)
-            //     {
-            //         // 오른쪽이면 1 왼쪽이면 0
-            //         if (!chainDic.ContainsKey(searchEdge))
-            //         {
-            //             chainDic.Add(searchEdge, 1);
-            //         }
-            //         searchEdge = searchEdge.next;
-            //         safeCount++;
-            //     }
-            //     searchEdge = sortedEdges.First().prev;
-            //     safeCount = 0;
-            //     while (lastEdge != searchEdge && safeCount <= sortedEdges.Count)
-            //     {
-            //         if (!chainDic.ContainsKey(searchEdge))
-            //         {
-            //             chainDic.Add(searchEdge, 0);
-            //         }
-            //         searchEdge = searchEdge.prev;
-            //         safeCount++;
-            //     }
-            // }
-            // // Fisrt Vertex의 next가 LeftChain일경우
-            // else
-            // {
-            //     lastEdge = sortedEdges.Last();
-            //     searchEdge = sortedEdges.First().next;
-            //     safeCount = 0;
-            //
-            //    // Debug.LogWarning(lastEdge.vertex.Coordinate);
-            //     while (lastEdge != searchEdge && safeCount <= sortedEdges.Count)
-            //     {
-            //         //Debug.Log(searchEdge.vertex.Coordinate + "   " + lastEdge.vertex.Coordinate);
-            //         
-            //         if (!chainDic.ContainsKey(searchEdge))
-            //         {
-            //             chainDic.Add(searchEdge, 0);
-            //         }
-            //         searchEdge = searchEdge.next;
-            //         safeCount++;
-            //     }
-            //     searchEdge = sortedEdges.First().prev;
-            //     safeCount = 0;
-            //
-            //     while (lastEdge != searchEdge && safeCount <= sortedEdges.Count)
-            //     {
-            //         if (!chainDic.ContainsKey(searchEdge))
-            //         {
-            //             chainDic.Add(searchEdge, 1);
-            //         }
-            //         searchEdge = searchEdge.prev;
-            //         safeCount++;
-            //     }
-            // }
-            //
-            // foreach (var pair in chainDic)
-            // {
-            //     float length = 3;
-            //     if (pair.Value == 0)
-            //     {
-            //         Debug.DrawLine(pair.Key.vertex.Coordinate, pair.Key.vertex.Coordinate + Vector2.left * length,Color.magenta);
-            //     }
-            //     else
-            //     {
-            //         Debug.DrawLine(pair.Key.vertex.Coordinate, pair.Key.vertex.Coordinate + Vector2.right * length, Color.red);
-            //     }
-            // }
-            // Debug.DrawLine(sortedEdges.Last().vertex.Coordinate, sortedEdges.Last().vertex.Coordinate + Vector2.down * 3, Color.red);
-            // chainDic.Add(sortedEdges.First(), 1);
-            // chainDic.Add(sortedEdges.Last(), 1);
-            //
-            // s.Push(sortedEdges.ElementAt(0));
-            // s.Push(sortedEdges.ElementAt(1));
-            // for (int j = 2; j < sortedEdges.Count; j++)
-            // {
-            //     HalfEdge uj = sortedEdges.ElementAt(j);
-            //     debugVector.value = uj.vertex.Coordinate;
-            //     yield return new WaitForSeconds(delay);
-            //     int sortedVertexChain = chainDic[uj];
-            //     int stackVertexChain = chainDic[s.Peek()];
-            //     if (uj != null && sortedVertexChain == stackVertexChain)
-            //     {
-            //         s.Push(uj);
-            //         // 각도가 음수가 아니면 internal이다.
-            //         float internalAngle = 0;
-            //         do
-            //         {
-            //             HalfEdge top0 = s.ElementAt(0);
-            //             HalfEdge top1 = s.ElementAt(1);
-            //             HalfEdge top2 = s.ElementAt(2);
-            //             
-            //             int chain = chainDic[uj];
-            //             // 왼쪽 체인이냐 오른쪽 체인이냐에따라
-            //             if (chain == 0)
-            //             {
-            //                 internalAngle = MyMath.SignedAngle(top2.vertex.Coordinate - top1.vertex.Coordinate,
-            //                     top0.vertex.Coordinate - top1.vertex.Coordinate);
-            //             }
-            //             else
-            //             {
-            //                 internalAngle = MyMath.SignedAngle(top0.vertex.Coordinate - top1.vertex.Coordinate,
-            //                     top2.vertex.Coordinate - top1.vertex.Coordinate);
-            //             }
-            //             
-            //             // 각도가 음수가 아니면 internal이다.
-            //             if (internalAngle >= 0)
-            //             {
-            //                 halfEdgeData.AddDiagonal(top0.vertex, top2.vertex);
-            //                 s.Pop();
-            //                 s.Pop();
-            //                 s.Push(top0);
-            //             }
-            //             debugVector.value = uj.vertex.Coordinate;
-            //             yield return new WaitForSeconds(1);
-            //         } while (internalAngle >= 0 && s.Count > 2);
-            //     }
-            //     else
-            //     {
-            //         s.Pop();
-            //         HalfEdge prev = s.Peek();
-            //         while (s.Count >= 2)
-            //         {
-            //             halfEdgeData.AddDiagonal(s.Peek().vertex, uj.vertex);
-            //             s.Pop();
-            //             yield return new WaitForSeconds(1);
-            //         }
-            //         s.Push(prev);
-            //         s.Push(uj);
-            //     }
-            // }
+            //halfEdgeData.AddDiagonal(monotoneFace.OuterComponent.vertex, monotoneFace.OuterComponent.next.next.vertex, monotoneFace);
+             SortedSet<HalfEdge> sortedEdges = new SortedSet<HalfEdge>(new MonotoneEdgeTriangulationComparer());
+             List<HalfEdge> edges = monotoneFace.GetConnectedEdges();
+             //Debug.Log(edges.Count);
+             sortedEdges.UnionWith(edges);
+             Stack<HalfEdge> s = new Stack<HalfEdge>();
+            
+             Dictionary<HalfEdge, int> chainDic = new Dictionary<HalfEdge, int>();
+            
+             HalfEdge searchEdge = null;
+             HalfEdge lastEdge = sortedEdges.Last();
+            
+            
+             // Fisrt Vertex의 next가 RightChain일경우
+             Vector2 topVertex = sortedEdges.First().vertex.Coordinate;
+             Vector2 prevVertex = sortedEdges.First().prev.vertex.Coordinate;
+             Vector2 nextVertex = sortedEdges.First().next.vertex.Coordinate;
+             int safeCount = 0;
+             if (MyMath.CCW(prevVertex, topVertex, nextVertex) < 0)
+             {
+                 searchEdge = sortedEdges.First().next;
+                 while (lastEdge != searchEdge && safeCount <= sortedEdges.Count)
+                 {
+                     // 오른쪽이면 1 왼쪽이면 0
+                     if (!chainDic.ContainsKey(searchEdge))
+                     {
+                         chainDic.Add(searchEdge, 1);
+                     }
+                     searchEdge = searchEdge.next;
+                     safeCount++;
+                 }
+                 searchEdge = sortedEdges.First().prev;
+                 safeCount = 0;
+                 while (lastEdge != searchEdge && safeCount <= sortedEdges.Count)
+                 {
+                     if (!chainDic.ContainsKey(searchEdge))
+                     {
+                         chainDic.Add(searchEdge, 0);
+                     }
+                     searchEdge = searchEdge.prev;
+                     safeCount++;
+                 }
+             }
+             // Fisrt Vertex의 next가 LeftChain일경우
+             else
+             {
+                 lastEdge = sortedEdges.Last();
+                 searchEdge = sortedEdges.First().next;
+                 safeCount = 0;
+            
+                // Debug.LogWarning(lastEdge.vertex.Coordinate);
+                 while (lastEdge != searchEdge && safeCount <= sortedEdges.Count)
+                 {
+                     //Debug.Log(searchEdge.vertex.Coordinate + "   " + lastEdge.vertex.Coordinate);
+                     
+                     if (!chainDic.ContainsKey(searchEdge))
+                     {
+                         chainDic.Add(searchEdge, 0);
+                     }
+                     searchEdge = searchEdge.next;
+                     safeCount++;
+                 }
+                 searchEdge = sortedEdges.First().prev;
+                 safeCount = 0;
+            
+                 while (lastEdge != searchEdge && safeCount <= sortedEdges.Count)
+                 {
+                     if (!chainDic.ContainsKey(searchEdge))
+                     {
+                         chainDic.Add(searchEdge, 1);
+                     }
+                     searchEdge = searchEdge.prev;
+                     safeCount++;
+                 }
+             }
+            
+             foreach (var pair in chainDic)
+             {
+                 float length = 3;
+                 if (pair.Value == 0)
+                 {
+                     Debug.DrawLine(pair.Key.vertex.Coordinate, pair.Key.vertex.Coordinate + Vector2.left * length,Color.magenta);
+                 }
+                 else
+                 {
+                     Debug.DrawLine(pair.Key.vertex.Coordinate, pair.Key.vertex.Coordinate + Vector2.right * length, Color.red);
+                 }
+             }
+             Debug.DrawLine(sortedEdges.Last().vertex.Coordinate, sortedEdges.Last().vertex.Coordinate + Vector2.down * 3, Color.red);
+             chainDic.Add(sortedEdges.First(), 1);
+             chainDic.Add(sortedEdges.Last(), 1);
+            
+             s.Push(sortedEdges.ElementAt(0));
+             s.Push(sortedEdges.ElementAt(1));
+             for (int j = 2; j < sortedEdges.Count; j++)
+             {
+                 HalfEdge uj = sortedEdges.ElementAt(j);
+                 debugHalfEdgeDebug.value = uj.vertex.Coordinate;
+                 yield return new WaitForSeconds(delay);
+                 int sortedVertexChain = chainDic[uj];
+                 int stackVertexChain = chainDic[s.Peek()];
+                 if (uj != null && sortedVertexChain == stackVertexChain)
+                 {
+                     s.Push(uj);
+                     // 각도가 음수가 아니면 internal이다.
+                     float internalAngle = 0;
+                     do
+                     {
+                         HalfEdge top0 = s.ElementAt(0);
+                         HalfEdge top1 = s.ElementAt(1);
+                         HalfEdge top2 = s.ElementAt(2);
+                         
+                         int chain = chainDic[uj];
+                         // 왼쪽 체인이냐 오른쪽 체인이냐에따라
+                         if (chain == 0)
+                         {
+                             internalAngle = MyMath.SignedAngle(top2.vertex.Coordinate - top1.vertex.Coordinate,
+                                 top0.vertex.Coordinate - top1.vertex.Coordinate);
+                         }
+                         else
+                         {
+                             internalAngle = MyMath.SignedAngle(top0.vertex.Coordinate - top1.vertex.Coordinate,
+                                 top2.vertex.Coordinate - top1.vertex.Coordinate);
+                         }
+                         
+                         // 각도가 음수가 아니면 internal이다.
+                         if (internalAngle >= 0)
+                         {
+                             halfEdgeData.AddDiagonal(top0.vertex, top2.vertex);
+                             s.Pop();
+                             s.Pop();
+                             s.Push(top0);
+                         }
+                         debugHalfEdgeDebug.value = uj.vertex.Coordinate;
+                         yield return new WaitForSeconds(delay);
+                     } while (internalAngle >= 0 && s.Count > 2);
+                 }
+                 else
+                 {
+                     s.Pop();
+                     HalfEdge prev = s.Peek();
+                     while (s.Count >= 2)
+                     {
+                         Debug.Log("진짜 갯수 " + s.Peek().vertex.Coordinate + " " + HalfEdgeUtility.GetEdgesAdjacentToAVertex(halfEdgeData, s.Peek().vertex).Count);
+                         halfEdgeData.AddDiagonal(s.Peek().vertex, uj.vertex);
+                         s.Pop();
+                         yield return new WaitForSeconds(delay);
+                     }
+                     s.Push(prev);
+                     s.Push(uj);
+                 }
+             }
 
             //return halfEdgeData;
             yield return null;
         }
 
-        public class VectorValue
+        public class HalfEdgeDebugValue
         {
             public Vector2 value;
+            public Color color;
         }
-        public static IEnumerator TravelFaceVertex(HalfEdgeData data, HalfEdgeFace face, VectorValue point, float delay = 1)
-        {
-            List<HalfEdge> edges = face.GetConnectedEdges();
-            for (int i = 0; i < edges.Count; i++)
-            {
-                point.value = edges[i].vertex.Coordinate;
-                yield return new WaitForSeconds(delay);
-            }
-           
-        }
-        public static HalfEdgeData MakeMonotone(HalfEdgeData polygon)
+        public static HalfEdgeData MakeMonotone(HalfEdgeData polygon, HalfEdgeFace face)
         {
             MonotoneVertexComparer monotoneVertexComparer = new MonotoneVertexComparer();
             SortedSet<HalfEdgeVertex> sortedVertexs = new SortedSet<HalfEdgeVertex>(monotoneVertexComparer);
@@ -228,13 +219,13 @@ namespace Monotone
                 sortedVertexs.Remove(vertex);
 
                 //Handle
-                HandleVertex(vertex, statusEdges, helperDic, polygon);
+                HandleVertex(vertex, statusEdges, helperDic, polygon, face);
             }
             return polygon;
         }
 
         public static void HandleVertex(HalfEdgeVertex vertex, SortedSet<HalfEdge> statusEdges,
-            Dictionary<HalfEdge, HalfEdgeVertex> helperDic, HalfEdgeData polygon)
+            Dictionary<HalfEdge, HalfEdgeVertex> helperDic, HalfEdgeData polygon, HalfEdgeFace face)
         {
             // // vertex의 prev vertex가 위에 있다면 이 vertex는 endpoint 인것이니까 이 vertex를 가지는 edge를 삭제시켜주고
             //    // 아니라면 아래쪽에있는 edge니까 추가시켜준다.

@@ -16,10 +16,10 @@ namespace Monotone
         {
             this.vertex = null;
         }
-        public HalfEdge(HalfEdgeVertex vertex)
-        {
-            this.vertex = vertex;
-        }
+        // public HalfEdge(HalfEdgeVertex vertex)
+        // {
+        //     this.vertex = vertex;
+        // }
         public HalfEdgeVertex GetDestination()
         {
             return twin.vertex;

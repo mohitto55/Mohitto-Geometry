@@ -32,6 +32,23 @@ namespace Monotone
             }
             return edges;
         }
+        public List<HalfEdge> GetTwinConnectedEdges()
+        {
+            List<HalfEdge> edges = new List<HalfEdge>();
+            HalfEdge curEdge = OuterComponent.twin;
+            if (curEdge != null)
+            {
+                edges.Add(curEdge);
+                curEdge = curEdge.next;
+                while (curEdge != null && curEdge != OuterComponent.twin)
+                {
+                    edges.Add(curEdge);
+                    curEdge = curEdge.next;
+                }
+            }
+            return edges;
+        }
+        
         public List<HalfEdgeVertex> GetConnectedVertexs()
         {
             List<HalfEdgeVertex> vertices = new List<HalfEdgeVertex>();
@@ -48,5 +65,22 @@ namespace Monotone
             }
             return vertices;
         }
+
+        // public HalfEdge GetEdgeIncludeVertex(HalfEdgeVertex vertex)
+        // {
+        //     HalfEdge curEdge = OuterComponent;
+        //     if (curEdge != null)
+        //     {
+        //         curEdge = curEdge.next;
+        //         while (curEdge != null && curEdge != OuterComponent)
+        //         {
+        //             if (curEdge.vertex == vertex)
+        //                 return curEdge;
+        //             curEdge = curEdge.next;
+        //         }
+        //     }
+        //
+        //     return null;
+        // }
     }
 }
