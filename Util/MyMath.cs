@@ -47,4 +47,88 @@ public static class MyMath
         x = a + (b - a) * (Cross2D(c - a, d - c) / det);  
         return true;  
     }  
+    
+    // 함수: 다각형의 방향을 확인하고 필요한 경우 반대로 정렬
+    public static List<Vector2> EnsureClockwise(List<Vector2> points)
+    {
+        if (IsCounterClockwise(points))
+        {
+            points.Reverse(); // 반시계 방향이면 시계 방향으로 반대로 정렬
+        }
+
+        return points;
+    }
+    // 함수: 다각형의 방향을 확인하고 필요한 경우 반대로 정렬
+    public static List<Vector2> EnsureCounterClockwise(List<Vector2> points)
+    {
+        if (!IsCounterClockwise(points))
+        {
+            points.Reverse(); // 반시계 방향이면 시계 방향으로 반대로 정렬
+        }
+
+        return points;
+    }
+
+    // 함수: 다각형의 방향을 확인 (반시계 방향이면 true, 시계 방향이면 false 반환)
+    // https://stackoverflow.com/questions/1165647/how-to-determine-if-a-list-of-polygon-points-are-in-clockwise-order
+    // 간단한 사례에 적용된 미적분학입니다. (그래픽을 게시할 기술이 없습니다.) 선분 아래의 면적은 평균 높이(y2+y1)/2에 가로 길이(x2-x1)를 곱한 값과 같습니다. x의 부호 규칙을 주목하세요. 삼각형으로 시도해보면 곧 어떻게 작동하는지 알 수 있을 겁니다. 
+    // 사소한 경고: 이 답변은 일반적인 데카르트 좌표계를 가정합니다. 언급할 만한 이유는 HTML5 캔버스와 같은 일부 일반적인 컨텍스트가 역 Y축을 사용하기 때문입니다. 그런 다음 규칙을 뒤집어야 합니다. 면적이 음수이면 곡선 은 시계 방향입니다
+    
+    public static bool IsCounterClockwise(List<Vector2> points)
+    {
+        float area = 0f;
+        for (int i = 0; i < points.Count; i++)
+        {
+            Vector2 p1 = points[i];
+            Vector2 p2 = points[(i + 1) % points.Count];
+            area += (p2.x - p1.x) * (p2.y + p1.y);
+        }
+        return area < 0;
+    }
+    
+    // https://kipl.tistory.com/284
+    // https://stackoverflow.com/questions/12446766/order-concave-polygon-vertices-counterclockwise
+    private class VertexCompair : IComparer<Vector2>
+    {
+        public int Compare(Vector2 a, Vector2 b)
+        {
+            if (a.x == b.x)
+            {
+                if (a.y < b.y)
+                    return -1;
+                else
+                    return 0;
+            }
+            if (a.x < b.x)
+                return -1;
+            else
+                return 0;
+        }
+    }
+    public static List<Vector2> MakeSimplePolygon(List<Vector2> pts) {
+        if (pts.Count < 1) return new List<Vector2>(); //null_vector;
+        int rightId = 0, leftId = 0;
+        for (int i = pts.Count; i-->0;) {
+            Debug.LogWarning(i);
+            if (pts[i].x > pts[rightId].x) rightId = i;
+            if (pts[i].x < pts[leftId].x) leftId = i;
+        }
+        List<Vector2> LP = new List<Vector2>(), RP = new List<Vector2>();
+        for (int i = 0; i < pts.Count; i++) {
+            if (i == rightId || i == leftId) continue;
+            // 기준선의 왼편(LP)/오른편(RP)에 놓인 점 분리;
+            if (MyMath.CCW(pts[leftId], pts[rightId], pts[i]) >= 0) LP.Add(pts[i]); 
+            else RP.Add(pts[i]);
+        }
+        if (LP.Count > 0) LP.Sort(new VertexCompair());
+        if (RP.Count > 0) RP.Sort(new VertexCompair());
+
+        List<Vector2> spoly = new List<Vector2>();
+        spoly.Add(pts[leftId]);
+        for (int i = 0; i < LP.Count(); i++) spoly.Add(LP[i]);
+        spoly.Add(pts[rightId]);
+        for (int i = RP.Count(); i-->0;) spoly.Add(RP[i]);
+        //spoly = clockwise simple polygon;
+        return spoly;
+    }
 }

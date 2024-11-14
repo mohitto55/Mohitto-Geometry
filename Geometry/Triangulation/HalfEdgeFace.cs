@@ -49,7 +49,7 @@ namespace Monotone
             return edges;
         }
         
-        public List<HalfEdgeVertex> GetConnectedVertexs()
+        public List<HalfEdgeVertex> GetConnectedVertices()
         {
             List<HalfEdgeVertex> vertices = new List<HalfEdgeVertex>();
             HalfEdge curEdge = OuterComponent;

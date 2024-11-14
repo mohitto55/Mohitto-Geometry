@@ -65,6 +65,10 @@ namespace Monotone
         //     }
         // }
 
+        /// <summary>
+        ///  시계방향으로 움직이고 있으면 왼쪽 Edge인걸로 간주한다.
+        /// </summary>
+        /// <returns></returns>
         public HalfEdge LeftEdge()
         {
             HalfEdge prev = IncidentEdge.prev;
@@ -84,6 +88,18 @@ namespace Monotone
         {
             HalfEdge prev = IncidentEdge.prev;
             HalfEdge next = IncidentEdge.next;
+            float ccw = MyMath.CCW(prev.vertex.Coordinate, Coordinate, next.vertex.Coordinate);
+            Debug.LogWarning(prev.vertex.Coordinate + " " + Coordinate + " " + next.vertex.Coordinate);
+
+            Debug.LogWarning(ccw);
+            if (ccw >= 0)
+            {
+                return IncidentEdge;
+            }
+            else
+            {
+                return next;
+            }
             if (prev.vertex.Coordinate.x < next.vertex.Coordinate.x)
                 return next;
             else

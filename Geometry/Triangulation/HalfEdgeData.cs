@@ -10,8 +10,12 @@ namespace Monotone
         public List<HalfEdge> edges = new List<HalfEdge>();
         public List<HalfEdgeFace> faces = new List<HalfEdgeFace>();
 
+        // - 선체: 선체 외부의 모든 삼각형을 제거하고 시계 반대 방향으로 정렬해야 합니다
+        // - 구멍: 구멍 내의 모든 삼각형을 제거하고 시계 방향으로 정렬해야 합니다
         public HalfEdgeData(List<Vector2> points)
         {
+            // CCW 방향으로 리스트 정렬
+            points = MyMath.EnsureCounterClockwise(points);
             int size = points.Count;
             HalfEdgeFace face = new HalfEdgeFace();
             faces.Add(face);
@@ -84,73 +88,83 @@ namespace Monotone
         }
 
                 // 대각선추가
-        public void AddDiagonal(HalfEdgeVertex upper, HalfEdgeVertex lower)
+        public void AddDiagonal(HalfEdgeVertex lower, HalfEdgeVertex upper)
         {
             Debug.Log("대각선 추가 시작");
-            if (upper == null || lower == null)
+            if (lower == null || upper == null)
                 return;
             
-            if (upper.IncidentEdge.vertex.Coordinate.y < lower.IncidentEdge.vertex.Coordinate.y)
+            if (lower.IncidentEdge.vertex.Coordinate.y < upper.IncidentEdge.vertex.Coordinate.y)
             {
-                HalfEdgeVertex temp = lower;
-                lower = upper;
-                upper = temp;
+                HalfEdgeVertex temp = upper;
+                upper = lower;
+                lower = temp;
             }
 
-            HalfEdge[] edgesHasSameFace = HalfEdgeUtility.GetEdgesHasSameFace(upper, lower);
+            HalfEdge[] edgesHasSameFace = HalfEdgeUtility.GetEdgesHasSameFace(lower, upper);
             if (edgesHasSameFace == null)
             {
-                Debug.LogWarning("같은 Face를 가진 Edge들을 찾지 못했습니다.");
+                Debug.LogWarning(lower.Coordinate + " " + upper.Coordinate +  " 같은 Face를 가진 Edge들을 찾지 못했습니다.");
                 return;
             }
-
-            AddDiagonal(upper, lower, edgesHasSameFace[0].incidentFace);
+            AddDiagonal(lower, upper, edgesHasSameFace[0].incidentFace);
         }
         // 대각선추가
-        private void AddDiagonal(HalfEdgeVertex upper, HalfEdgeVertex lower, HalfEdgeFace face)
+        // 시계 방향, 반시계 방향으로 이어졋는지 상관없이 vertex끼리 선을 잇는다.
+        private void AddDiagonal(HalfEdgeVertex lower, HalfEdgeVertex upper, HalfEdgeFace face)
         {
-            if (upper == null || lower == null)
+            if (lower == null || upper == null)
                 return;
             
-            if (upper.IncidentEdge.vertex.Coordinate.y < lower.IncidentEdge.vertex.Coordinate.y)
+            if (lower.IncidentEdge.vertex.Coordinate.y > upper.IncidentEdge.vertex.Coordinate.y)
             {
-                HalfEdgeVertex temp = lower;
-                lower = upper;
-                upper = temp;
+                HalfEdgeVertex temp = upper;
+                upper = lower;
+                lower = temp;
             }
             
             HalfEdge upperEdge = HalfEdgeUtility.GetEdgesHasSameFace(upper, face);
             HalfEdge lowerEdge = HalfEdgeUtility.GetEdgesHasSameFace(lower, face);
             if (lowerEdge == null || upperEdge == null)
             {
-                Debug.LogWarning("엣지가 없습니다");
+                Debug.LogWarning(upper.Coordinate + " " + lower.Coordinate + " 엣지가 없습니다");
                 return;
+            }
+
+            if (!HalfEdgeUtility.IsFaceCounterClockwise(face))
+            {
+                HalfEdge temp = upperEdge;
+                upperEdge = lowerEdge;
+                lowerEdge = temp;
             }
             
             // 왼쪽 원점을 아래쪽 오른쪽을 위로해서 각각 자체를 쌍둥이로 표현할 수 있다.
             // 대각선으로 할 새로운 edge를 만든다
             HalfEdge leftEdge = new HalfEdge();
             HalfEdge rightEdge = new HalfEdge();
-
-            leftEdge.vertex = lower;
-            rightEdge.vertex = upper;
-
+            leftEdge.vertex = upper;
             leftEdge.twin = rightEdge;
+            leftEdge.prev = lowerEdge;
+            leftEdge.next = upperEdge.next;
+            leftEdge.incidentFace = leftEdge.next.incidentFace;
+            
+            rightEdge.vertex = lower;
             rightEdge.twin = leftEdge;
+            rightEdge.prev = upperEdge;
+            rightEdge.next = lowerEdge.next;
+            rightEdge.incidentFace = rightEdge.next.incidentFace;
+
 
             // 새롭게 대각선을 만드니 이전 엣지들의 다음 vertex와 edge를 업데이트 해줘야한다.
-            HalfEdge prevLowerEdge = lowerEdge.prev;
-            HalfEdge prevUpperEdge = upperEdge.prev;
+            lowerEdge.next.prev = rightEdge;
+            upperEdge.next.prev = leftEdge;
 
-            prevLowerEdge.next = leftEdge;
-            leftEdge.prev = prevLowerEdge;
-            leftEdge.next = upperEdge;
-            upper.IncidentEdge.prev = leftEdge;
+            lowerEdge.next = leftEdge;
+            upperEdge.next = rightEdge;
 
-            prevUpperEdge.next = rightEdge;
-            rightEdge.prev = prevUpperEdge;
-            rightEdge.next = lowerEdge;
-            lower.IncidentEdge.prev = rightEdge;
+            // incidentEdge의 방향이 최대한 동일하게 한다.
+            lower.IncidentEdge = rightEdge;
+            upper.IncidentEdge = leftEdge;
 
             leftEdge.incidentFace = leftEdge.next.incidentFace;
             // 이전에 저장한 Edge가 outerComponent일 가능성이 있기 떄문에 데이터 보장을 위해 이렇게 해준다.
@@ -162,7 +176,7 @@ namespace Monotone
             int i = 0;
             do
             {
-                Debug.Log(i + " " + current.vertex.Coordinate);
+                // Debug.Log(i + " " + current.vertex.Coordinate);
                 i++;
                 current.incidentFace = rightFace;
                 current = current.next;
@@ -171,5 +185,6 @@ namespace Monotone
             edges.Add(leftEdge);
             edges.Add(rightEdge);
         }
+        
     }
 }

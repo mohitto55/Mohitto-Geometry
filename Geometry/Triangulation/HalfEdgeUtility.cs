@@ -15,7 +15,7 @@ public static class HalfEdgeUtility
     /// <returns></returns>
     public static HalfEdge GetEdgesHasSameFace(HalfEdgeVertex vertex, HalfEdgeFace face)
     {
-        Debug.LogWarning("GetEdgesHasSameFace 페이스의 해쉬 : " + face.GetHashCode());
+        Debug.LogWarning("GetEdgesHasSameFace 페이스의 해쉬 : " + vertex.Coordinate + " " + face.GetHashCode());
         if (face == null)
         {
             Debug.LogWarning("비교 대상 face가 없습니다.");
@@ -33,14 +33,21 @@ public static class HalfEdgeUtility
         {
             if (searchEdge.incidentFace == face)
             {
+                Debug.Log(vertex.Coordinate + " 똑같은 face를 찾았습니다");
                 return searchEdge;
             }
 
-            if (searchEdge.twin == null)
+            // -THINKING-
+            // searchEdge.twin.prev로 하면 안되는 이유가 뭘까?
+            if (searchEdge.twin.prev == null)
             {
                 return null;
             }
             Debug.Log("순회");
+            Debug.Log(searchEdge.prev.vertex.Coordinate);
+            Debug.Log(searchEdge.vertex.Coordinate);
+            Debug.Log(searchEdge.next.vertex.Coordinate);
+
             if (searchEdge.incidentFace != null)
             {
                 Debug.Log(searchEdge.vertex.Coordinate);
@@ -48,7 +55,7 @@ public static class HalfEdgeUtility
             }
 
             searchEdge = searchEdge.twin.prev;
-        } while (searchEdge != vertex.IncidentEdge && vertex != null);
+        } while (searchEdge != vertex.IncidentEdge);
         Debug.LogWarning("맞는 Edge를 찾지 못했습니다.");
 
         return null;
@@ -65,7 +72,7 @@ public static class HalfEdgeUtility
         Debug.Log("같은 페이스를 가진 엣지들 찾기 vertex1 : " + vertex1.Coordinate + " vertex2 : " + vertex2.Coordinate);
         List<HalfEdge> vertex1Edges = GetEdgesAdjacentToAVertex(vertex1);
         List<HalfEdge> vertex2Edges = GetEdgesAdjacentToAVertex(vertex2);
-        Debug.Log("인접한 엣지들 갯수 vertex1 : " + vertex1Edges.Count + " vertex2 : " + vertex1Edges.Count);
+        Debug.Log("인접한 엣지들 갯수 vertex1 : " + vertex1Edges.Count + " vertex2 : " + vertex2Edges.Count);
 
         // vertex1Edges의 각 face를 HashSet에 추가
         var faceSet = new HashSet<HalfEdgeFace>();
@@ -92,8 +99,32 @@ public static class HalfEdgeUtility
                 return new HalfEdge[] {edgeMap[edge.incidentFace], edge};
             }
         }
-
         return null;
+    }
+    
+    // 두 버텍스가 이미 연결되어 있는지 확인한다.
+    public static bool IsConnectedVertex(HalfEdgeVertex vertex1, HalfEdgeVertex vertex2)
+    {
+        List<HalfEdge> vertex1Edges = GetEdgesAdjacentToAVertex(vertex1);
+
+        // vertex1Edges의 각 face를 HashSet에 추가
+        var faceSet = new HashSet<HalfEdgeFace>();
+        var edgeMap = new Dictionary<HalfEdgeFace, HalfEdge>();
+
+        foreach (var edge in vertex1Edges)
+        {
+            if (edge.prev.vertex == vertex2 || edge.next.vertex == vertex2)
+                return true;
+        }
+
+        List<HalfEdge> vertex2Edges = GetEdgesAdjacentToAVertex(vertex2);
+        // vertex2Edges에서 같은 face를 가진 edge를 찾음
+        foreach (var edge in vertex2Edges)
+        {
+            if (edge.prev.vertex == vertex1 || edge.next.vertex == vertex1)
+                return true;
+        }
+        return false;
     }
     
     public static List<HalfEdgeVertex2> MakeHalfEdge(List<Vector2> positions)
@@ -144,12 +175,34 @@ public static class HalfEdgeUtility
         return list;
     }
 
-    public static List<HalfEdge> GetEdgesAdjacentToAVertex(HalfEdgeData polygon, HalfEdgeVertex vertex)
+    public static List<HalfEdge> GetEdgesAdjacentToAVertexBruteForce(HalfEdgeData polygon, HalfEdgeVertex vertex)
     {
         return polygon.edges.Where(t=>
         {
             return t.vertex == vertex;
         }).ToList();
+    }
+
+    /// <summary>
+    /// face를 참조하는 edge들이 CCW 방향으로 연결되어 있느지 확인한다.
+    /// </summary>
+    /// <param name="face"></param>
+    /// <returns></returns>
+    public static bool IsFaceCounterClockwise(HalfEdgeFace face)
+    {
+        List<Vector2> vector2s = VerticesToVec(face.GetConnectedVertices());
+        return MyMath.IsCounterClockwise(vector2s);
+    }
+
+    public static List<Vector2> VerticesToVec(List<HalfEdgeVertex> vertices)
+    {
+        List<Vector2> vector2s = new List<Vector2>();
+        for (int i = 0; i < vertices.Count; i++)
+        {
+            vector2s.Add(vertices[i].Coordinate);
+        }
+
+        return vector2s;
     }
 }
 

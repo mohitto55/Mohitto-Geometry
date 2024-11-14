@@ -24,6 +24,11 @@ namespace Monotone
 
         void OnDrawGizmos()
         {
+            if (!Application.isPlaying)
+            {
+                EdgeData = new HalfEdgeData(MyMath.GetVector2ListFromTransform(vertexs));
+            }
+
             if (EdgeData == null)
                 return;
            
@@ -93,7 +98,7 @@ namespace Monotone
                     
             pro.transform.position = vertex.Coordinate;
             pro.color = Color.white;
-            pro.text = vertex.type.ToString() + "\nAngle : " + MyMath.SignedAngle(v1, v2);
+            pro.text = vertex.type.ToString() + "\nAngle : " + MyMath.SignedAngle(v1, v2) + "\n" + vertex.Coordinate.ToString();
             component.prefab = tmppropab;
         }
     }

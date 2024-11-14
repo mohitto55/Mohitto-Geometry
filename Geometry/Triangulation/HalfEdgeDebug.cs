@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Monotone;
 using UnityEngine;
 
@@ -41,10 +42,63 @@ public static class HalfEdgeDebug
         {
             point.value = edges[i].vertex.Coordinate;
             Debug.Log("<color=green>"+ edges[i].vertex.Coordinate + " "+ edges[i].next.vertex.Coordinate +  " " + edges[i].twin.vertex.Coordinate +"</color>");
-
             Debug.Log("<color=green>"+ edges[i].incidentFace.GetHashCode() +"</color>");
 
             yield return new WaitForSeconds(delay);
+        }
+    }
+
+    public static void DebugPolygon(HalfEdgeData data)
+    {
+        Debug.Log("============Half Edge Data 출력============");
+        Debug.Log("총 Vertex : " + data.vertices.Count);
+        Debug.Log("총 Edge : " + data.edges.Count);
+        Debug.Log("총 face : " + data.faces.Count);
+
+        Debug.Log("============Face 정보 출력============");
+        List<HalfEdgeFace> faces = data.faces;
+        for (int i = 0; i < faces.Count(); i++)
+        {
+            HalfEdgeFace f = faces[i];
+
+            Debug.Log(i+"번째 Face");
+            Debug.Log("해쉬 : " + f.GetHashCode());
+            Debug.Log("내부 Edges들 갯수 : " + f.GetConnectedEdges().Count);
+            Debug.Log("외부 Edges들 갯수 : " + f.GetTwinConnectedEdges().Count);
+        }
+        
+        Debug.Log("============Vertex 정보 출력============");
+        List<HalfEdgeVertex> vertices = data.vertices;
+        for (int i = 0; i < vertices.Count(); i++)
+        {
+            HalfEdgeVertex v = vertices[i];
+            Debug.Log(i+"번째 Vertex");
+            Debug.Log("좌표 : " + v.Coordinate);
+            
+            
+            List<HalfEdge> halfEdges = HalfEdgeUtility.GetEdgesAdjacentToAVertexBruteForce(data, v);
+            Debug.Log(i +"번째 Vertex의 인접 Edge 검사");
+            Debug.Log("인접 Edge들 브루트포스 탐색 갯수 : " + halfEdges.Count);
+            halfEdges = HalfEdgeUtility.GetEdgesAdjacentToAVertex(v);
+            Debug.Log("인접 Edge들 인접 검사 탐색 갯수 : " + halfEdges.Count);
+            foreach (HalfEdge adjacentEdge in halfEdges)
+            {
+                Debug.Log("정상 Edge 좌표검사");
+                Debug.Log("prev : " + adjacentEdge.prev.vertex.Coordinate + " / cur : " + adjacentEdge.vertex.Coordinate + " / next : " + adjacentEdge.next.vertex.Coordinate);
+                Debug.Log("정상 Edge의 face");
+                if(adjacentEdge.incidentFace != null)
+                    Debug.Log(adjacentEdge.incidentFace.GetHashCode());
+                else
+                    Debug.Log("Face is Null");
+
+                Debug.Log("반대 Edge 좌표검사");
+                Debug.Log("prev : " + adjacentEdge.twin.prev.vertex.Coordinate + " / cur : " + adjacentEdge.twin.vertex.Coordinate + " / next : " + adjacentEdge.twin.next.vertex.Coordinate);
+                Debug.Log("반대 Edge의 face");
+                if(adjacentEdge.twin.incidentFace != null)
+                    Debug.Log(adjacentEdge.twin.incidentFace.GetHashCode());
+                else
+                    Debug.Log("Face is Null");
+            }
         }
     }
 }
