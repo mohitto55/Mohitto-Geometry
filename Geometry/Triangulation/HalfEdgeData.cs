@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -9,12 +10,49 @@ namespace Monotone
         public List<HalfEdgeVertex> vertices = new List<HalfEdgeVertex>();
         public List<HalfEdge> edges = new List<HalfEdge>();
         public List<HalfEdgeFace> faces = new List<HalfEdgeFace>();
-
+        
         // - 선체: 선체 외부의 모든 삼각형을 제거하고 시계 반대 방향으로 정렬해야 합니다
         // - 구멍: 구멍 내의 모든 삼각형을 제거하고 시계 방향으로 정렬해야 합니다
         public HalfEdgeData(List<Vector2> points)
         {
+            AddPolygon(points);
+        }
+
+        public void AddLine(Vector2 point1, Vector2 point2)
+        {
+            List<HalfEdgeVertex> matchingVertices1 = vertices.Where(t => t.Coordinate == point1).ToList();
+            List<HalfEdgeVertex> matchingVertices2 = vertices.Where(t => t.Coordinate == point1).ToList();
+
+            HalfEdgeVertex vertex1;
+            HalfEdgeVertex vertex2;
+            
+            if (matchingVertices1.Count > 0)
+            {
+                vertex1 = matchingVertices1[0];
+            }
+            else
+            {
+                vertex1 = new HalfEdgeVertex(point1);
+                vertices.Add(vertex1);
+            }
+            if (matchingVertices2.Count > 0)
+            {
+                vertex2 = matchingVertices2[0];
+            }
+            else
+            {
+                vertex2 = new HalfEdgeVertex(point2);
+                vertices.Add(vertex2);
+            }
+            
+            AddDiagonal(vertex1, vertex2);
+        }
+        
+        public void AddPolygon(List<Vector2> points)
+        {
             // CCW 방향으로 리스트 정렬
+            int startVertexCount = vertices.Count;
+            int startEdgeCount = edges.Count;
             points = MyMath.EnsureCounterClockwise(points);
             int size = points.Count;
             HalfEdgeFace face = new HalfEdgeFace();
@@ -26,8 +64,7 @@ namespace Monotone
             for (int i = 0; i < size; i++)
             {
                 Vector2 point = points[i];
-
-                // 이거는 버텍스틑 하나만 만드네? 원래 같은 버텍스를 여러개 만들어야하는데
+                
                 // 다른 자료들 보니 꼭 같은 정점을 두개 만들 필요는 없어보인다 어떻게 쓰느냐가 중요한듯
                 HalfEdgeVertex vertex = new HalfEdgeVertex(point);
                 HalfEdge left = new HalfEdge();
@@ -65,35 +102,24 @@ namespace Monotone
                 prevRightEdge = right;
             }
             
-            HalfEdge firstLeftEdge = edges[0];
+            HalfEdge firstLeftEdge = edges[startEdgeCount];
             prevLeftEdge.next = firstLeftEdge;
             firstLeftEdge.prev = prevLeftEdge;
                 
-            HalfEdge firstRightEdge = edges[1];
+            HalfEdge firstRightEdge = edges[startEdgeCount+1];
             firstRightEdge.next = prevRightEdge;
             firstRightEdge.vertex = prevLeftEdge.vertex;
             prevRightEdge.prev = firstRightEdge;
-            //prevRightEdge.next = 
-
-            //prevRightEdge.vertex = vertices[0];
             face.OuterComponent = firstLeftEdge;
-            
-            // 완성된 버텍스들을 순회하며 타입을 정한다.
-            for (int i = 0; i < vertices.Count; i++)
-            {
-                int indexPrev = (i - 1 + vertices.Count) % vertices.Count;
-                int indexNext = (i + 1) % vertices.Count;
-                vertices[i].DetermineType(vertices[indexPrev], vertices[indexNext]);
-            }
         }
 
-                // 대각선추가
+        // 대각선추가
         public void AddDiagonal(HalfEdgeVertex lower, HalfEdgeVertex upper)
         {
-            Debug.Log("대각선 추가 시작");
             if (lower == null || upper == null)
                 return;
-            
+            if (HalfEdgeUtility.IsConnectedVertex(lower, upper))
+                return;
             if (lower.IncidentEdge.vertex.Coordinate.y < upper.IncidentEdge.vertex.Coordinate.y)
             {
                 HalfEdgeVertex temp = upper;
@@ -109,6 +135,12 @@ namespace Monotone
             }
             AddDiagonal(lower, upper, edgesHasSameFace[0].incidentFace);
         }
+
+        protected bool IsIsolationVertex(HalfEdgeVertex vertex)
+        {
+            return vertex.IncidentEdge == null;
+        }
+        
         // 대각선추가
         // 시계 방향, 반시계 방향으로 이어졋는지 상관없이 vertex끼리 선을 잇는다.
         private void AddDiagonal(HalfEdgeVertex lower, HalfEdgeVertex upper, HalfEdgeFace face)
@@ -171,12 +203,11 @@ namespace Monotone
             leftEdge.incidentFace.OuterComponent = leftEdge;
 
             HalfEdgeFace rightFace = new HalfEdgeFace { OuterComponent = rightEdge };
-            Debug.Log("새로 만든 Face : <color=green>"+ rightFace.GetHashCode() +"</color>");
+            //Debug.Log("새로 만든 Face : <color=green>"+ rightFace.GetHashCode() +"</color>");
             HalfEdge current = rightEdge;
             int i = 0;
             do
             {
-                // Debug.Log(i + " " + current.vertex.Coordinate);
                 i++;
                 current.incidentFace = rightFace;
                 current = current.next;
@@ -185,6 +216,5 @@ namespace Monotone
             edges.Add(leftEdge);
             edges.Add(rightEdge);
         }
-        
     }
 }

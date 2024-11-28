@@ -30,6 +30,19 @@ public static class MyMath
     
     public static bool FloatZero(float x) => Mathf.Abs(x) < 0.00005f;
 
+    /// <summary>
+    /// a가 b보다 작으면 -1 크면 1 같으면 0을 반환합니다
+    /// </summary>
+    /// <param name="a"></param>
+    /// <param name="b"></param>
+    /// <returns></returns>
+    public static int CompareFloat(float a, float b)
+    {
+        if (FloatZero(a - b)) return 0;
+        if (a > b) return 1;
+        if (a < b) return -1;
+        return 0;
+    }
     public static float CCW(Vector2 p1, Vector2 p2, Vector2 p3)
     {
         float ret = Cross2D(p2 - p1, p3 - p2);
@@ -65,7 +78,6 @@ public static class MyMath
         {
             points.Reverse(); // 반시계 방향이면 시계 방향으로 반대로 정렬
         }
-
         return points;
     }
 

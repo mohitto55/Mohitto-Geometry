@@ -48,7 +48,7 @@ public static class HalfEdgeDebug
         }
     }
 
-    public static void DebugPolygon(HalfEdgeData data)
+    public static void DebugHalfEdgeData(HalfEdgeData data)
     {
         Debug.Log("============Half Edge Data Ãâ·Â============");
         Debug.Log("ÃÑ Vertex : " + data.vertices.Count);

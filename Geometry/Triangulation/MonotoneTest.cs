@@ -6,11 +6,22 @@ using UnityEngine;
 
 namespace Monotone
 {
+    [System.Serializable]
+    public struct PolygonLine
+    {
+        public Transform p1;
+        public Transform p2;
+    }
+    [System.Serializable]
+    public class TransformGroup
+    {
+        public List<Transform> Transforms;
+    }
     public class MonotoneTest : MonoBehaviour
     {
-        public List<Transform> vertexs = new List<Transform>();
+        [SerializeField] public List<TransformGroup> vertexs = new List<TransformGroup>();
+        //public List<PolygonLine> _lines = new List<PolygonLine>();
         
-        public List<HalfEdgeVertex> vertices;
         [SerializeReference]
         private ListBehaviour<HalfEdgeVertex> vertexListCompoennt;
         public TextMeshPro tmppropab;
@@ -18,26 +29,30 @@ namespace Monotone
         private Monotone.HalfEdgeDebugValue _halfEdgeDebugValue = new Monotone.HalfEdgeDebugValue();
         private void Awake()
         {
-            EdgeData = new HalfEdgeData(MyMath.GetVector2ListFromTransform(vertexs));
+            InitPolygon();
             StartCoroutine(Monotone.MonotoneTriangulation(EdgeData, _halfEdgeDebugValue));
         }
 
+        public void InitPolygon()
+        {
+            EdgeData = new HalfEdgeData(MyMath.GetVector2ListFromTransform(vertexs[0].Transforms));
+            for (int i = 1; i < vertexs.Count; i++)
+            {
+                //EdgeData.AddPolygon(MyMath.GetVector2ListFromTransform(vertexs[1].Transforms));
+            }
+        }
         void OnDrawGizmos()
         {
             if (!Application.isPlaying)
             {
-                EdgeData = new HalfEdgeData(MyMath.GetVector2ListFromTransform(vertexs));
+                InitPolygon();
             }
 
             if (EdgeData == null)
                 return;
-           
-            // for (int i = 0; i < vertexs.Count; i++)
-            // {
-            //     Gizmos.DrawLine(vertexs[i].position, vertexs[(i + 1) % vertexs.Count].position);
-            // }
             
-            vertices = EdgeData.vertices;
+            
+            List<HalfEdgeVertex> vertices = EdgeData.vertices;
             List<HalfEdge> edges = new List<HalfEdge>();
             edges = EdgeData.edges;
 

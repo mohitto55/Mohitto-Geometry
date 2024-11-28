@@ -13,6 +13,10 @@ namespace Monotone
     {
         public Vector2 Coordinate;
         public HalfEdge IncidentEdge;
+        
+        /// <summary>
+        /// 어차피 이 Type은 실행되기 전에 한번만 수행된다.
+        /// </summary>
         public Vtype type;
 
         public enum Vtype
@@ -21,51 +25,40 @@ namespace Monotone
             END,
             REGULAR,
             SPLIT,
-            MERGE   
+            MERGE,
         }
         public HalfEdgeVertex(Vector2 v)
         {
             Coordinate = v;
         }
 
-        public void DetermineType(HalfEdgeVertex first, HalfEdgeVertex second)
+        bool CheckParallel(HalfEdgeVertex v1, HalfEdgeVertex v2)
         {
-
-            Vector2 v1 = first.Coordinate - this.Coordinate;
-            Vector2 v2 = second.Coordinate - this.Coordinate;
-            float angle = MyMath.SignedAngle(v1, v2);
-            // 양방향 노드들이 자신보다 낮다면
-            if (first.Coordinate.y < this.Coordinate.y && second.Coordinate.y < this.Coordinate.y)
+            if (MyMath.FloatZero(Mathf.Abs(v1.Coordinate.y - this.Coordinate.y)))
             {
-                if (angle >= 0) this.type = Vtype.START;
-                if (angle <= 0) this.type = Vtype.SPLIT;
+                // 양쪽이 모두 수평이라면?
+                if(MyMath.FloatZero(Mathf.Abs(v2.Coordinate.y - this.Coordinate.y)))
+                {
+                    this.type = Vtype.REGULAR;
+                    return true;
+                }
+                // 한쪽이 아래쪽으로 향한다면?
+                if (v2.Coordinate.y < Coordinate.y)
+                {
+                    this.type = Vtype.START;
+                }
+                else if (v2.Coordinate.y > Coordinate.y)
+                {
+                    this.type = Vtype.END;
+                }
+                return true;
             }
-            // 양방향 노드들이 자신보다 높다면
-            else if (first.Coordinate.y > this.Coordinate.y && second.Coordinate.y > this.Coordinate.y)
-            {
-                // 내부각이 180도 미만이고 
-                if (angle >= 0) this.type = Vtype.END;
-                if (angle <= 0) this.type = Vtype.MERGE;
-            }
-            // 하나는 아래, 하나는 위로 가는 버텍스로 스위치하지 않는다.
-            else
-            {
-                this.type = Vtype.REGULAR;
-            }
+            return false;
         }
-
-        // public HalfEdge CWEdge()
-        // {
-        //     HalfEdgeVertex prevV = IncidentEdge.prev.vertex;
-        //     HalfEdgeVertex nextV = IncidentEdge.next.vertex;
-        //     // 시계방향
-        //     if (MyMath.CCW(prevV.Coordinate, Coordinate, nextV.Coordinate) < 0)
-        //     {
-        //         
-        //     }
-        // }
+        
 
         /// <summary>
+        /// 정점이 CCW 방향으로 정렬되어 있다 가정했을때 
         ///  시계방향으로 움직이고 있으면 왼쪽 Edge인걸로 간주한다.
         /// </summary>
         /// <returns></returns>
@@ -83,7 +76,10 @@ namespace Monotone
                 return next;
             }
         }
-        
+        /// <summary>
+        /// Right가 필요한 Edge들은 SPLIT, MERGE 두개다
+        /// </summary>
+        /// <returns></returns>
         public HalfEdge RightEdge()
         {
             HalfEdge prev = IncidentEdge.prev;
@@ -92,13 +88,13 @@ namespace Monotone
             Debug.LogWarning(prev.vertex.Coordinate + " " + Coordinate + " " + next.vertex.Coordinate);
 
             Debug.LogWarning(ccw);
-            if (ccw >= 0)
+            if (ccw >= 1)
             {
-                return IncidentEdge;
+                return next;
             }
             else
             {
-                return next;
+                return IncidentEdge;
             }
             if (prev.vertex.Coordinate.x < next.vertex.Coordinate.x)
                 return next;
