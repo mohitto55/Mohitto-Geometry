@@ -12,46 +12,43 @@ namespace Monotone
     {
         public static IEnumerator MonotoneTriangulation(HalfEdgeData polygon, HalfEdgeDebugValue debugHalfEdgeDebug)
         {
-            MapOverlay.StartMapOverlay(polygon, polygon.faces[0], polygon.faces[1]);
+            //MapOverlay.StartMapOverlay(polygon, polygon.faces[0], polygon.faces[1]);
 
-            List<HalfEdgeVertex> vertices = polygon.faces[1].GetConnectedVertices();
+            //List<HalfEdgeVertex> vertices = polygon.faces[1].GetConnectedVertices();
 
             //MapOverlay.StartMapOverlay(polygon, polygon.faces[0], polygon.faces[1]);
              yield return MakeMonotone(polygon, debugHalfEdgeDebug, 0.5f);
-            // HalfEdgeData monotone = polygon;
-            // List<HalfEdgeFace> faces = new List<HalfEdgeFace>();
-            // yield return new WaitForSeconds(0);
-            // Debug.Log("페이스 갯수 " + monotone.faces.Count);
-            // for (int i = 0; i < monotone.faces.Count; i++)
-            // {
-            //     faces.Add(monotone.faces[i]);
-            // }
-            //
-            // for (int i = 0; i < faces.Count; i++)
-            // {
-            //     Debug.Log("페이스 " + i + " " + faces[i].GetConnectedEdges().Count);
-            //     //yield return HalfEdgeDebug.TravelFaceVertex(polygon, faces[i], debugHalfEdgeDebug, 0.2f);
-            //     yield return MonotoneTriangulation(polygon, faces[i], debugHalfEdgeDebug, 0.3f);
-            // }
+            HalfEdgeData monotone = polygon;
+            List<HalfEdgeFace> faces = new List<HalfEdgeFace>();
+            yield return new WaitForSeconds(0);
+            Debug.Log("페이스 갯수 " + monotone.faces.Count);
+            for (int i = 0; i < monotone.faces.Count; i++)
+            {
+                faces.Add(monotone.faces[i]);
+            }
+
+            for (int i = 0; i < faces.Count; i++)
+            {
+                Debug.Log("페이스 " + i + " " + faces[i].GetConnectedEdges().Count);
+                //yield return HalfEdgeDebug.TravelFaceVertex(polygon, faces[i], debugHalfEdgeDebug, 0.2f);
+                yield return MonotoneTriangulation(polygon, faces[i], debugHalfEdgeDebug, 0.3f);
+            }
             //yield return MonotoneTriangulation(polygon, faces, debugHalfEdgeDebug, 0.3f);
 
             //HalfEdgeDebug.DebugHalfEdgeData(polygon);
             yield return null;
         }
 
-        public static IEnumerator MonotoneTriangulation(HalfEdgeData halfEdgeData, List<HalfEdgeFace> monotoneFaces, HalfEdgeDebugValue debugHalfEdgeDebug, float delay = 1)
+        public static IEnumerator MonotoneTriangulation(HalfEdgeData halfEdgeData, HalfEdgeFace monotoneFace, HalfEdgeDebugValue debugHalfEdgeDebug, float delay = 1)
         {
              SortedSet<HalfEdge> sortedEdges = new SortedSet<HalfEdge>(new MonotoneEdgeTriangulationComparer());
 
-             List<HalfEdge> edges = new List<HalfEdge>();
-             for (int i = 0; i < monotoneFaces.Count; i++)
-             {
-                 edges.AddRange(monotoneFaces[i].GetConnectedEdges());
-             }
-             sortedEdges.UnionWith(edges);
-             
-             // Stack으로는 중간에 있는 요소를 없앨 수 없어서 LinkedList로 한다.
-             LinkedList<HalfEdge> s = new LinkedList<HalfEdge>();
+            List<HalfEdge> edges = new List<HalfEdge>();
+            edges.AddRange(monotoneFace.GetConnectedEdges());
+            sortedEdges.UnionWith(edges);
+
+            // Stack으로는 중간에 있는 요소를 없앨 수 없어서 LinkedList로 한다.
+            LinkedList<HalfEdge> s = new LinkedList<HalfEdge>();
             
              Dictionary<HalfEdge, int> chainDic = new Dictionary<HalfEdge, int>();
             
