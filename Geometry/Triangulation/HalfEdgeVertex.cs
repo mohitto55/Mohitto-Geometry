@@ -85,9 +85,6 @@ namespace Monotone
             HalfEdge prev = IncidentEdge.prev;
             HalfEdge next = IncidentEdge.next;
             float ccw = MyMath.CCW(prev.vertex.Coordinate, Coordinate, next.vertex.Coordinate);
-            Debug.LogWarning(prev.vertex.Coordinate + " " + Coordinate + " " + next.vertex.Coordinate);
-
-            Debug.LogWarning(ccw);
             if (ccw >= 1)
             {
                 return next;

@@ -52,7 +52,7 @@ namespace Swewep_Line_Algorithm
 
         public override string ToString()
         {
-            return Label == "" ? ("(" + x + ", " + y + ")") : Label;
+            return Label + "(" + x + ", " + y + ")";
         }
 
         public float Magnitude() => (float)Math.Sqrt(x * x + y * y);

@@ -47,6 +47,11 @@ namespace Monotone
             
             AddDiagonal(vertex1, vertex2);
         }
+
+        public void AddEdge(HalfEdgeVertex v, HalfEdge edge)
+        {
+            
+        }
         
         public void AddPolygon(List<Vector2> points)
         {

@@ -49,7 +49,6 @@ namespace Swewep_Line_Algorithm
                 this.Start = end;
                 this.End = start;
             }
-
             if (id > -1)
             {
                 this.Start.Label = "a" + id;
@@ -119,10 +118,9 @@ namespace Swewep_Line_Algorithm
             Point direction = End - Start, result = p - Start;
             // 이 뜻은 두 y 벡터의 사이에 있다는 뜻이다.
             if (MathUtility.FloatZero(result.x) && MathUtility.FloatZero(direction.x) && direction.y > p.y ||
-                // 그리고 
-                MathUtility.FloatZero(result.y) && MathUtility.FloatZero(direction.y) && direction.y > p.y)
+               MathUtility.FloatZero(result.y) && MathUtility.FloatZero(direction.y) && direction.y > p.y)
                 return true;
-            //
+
             return MathUtility.FloatZero(result.x / direction.x - result.y / direction.y);
         }
         
@@ -146,6 +144,13 @@ namespace Swewep_Line_Algorithm
         {
             float y = p.y - belowLine;
             Point direction = End - Start;
+            
+            // y 값이 같으면 x 값만 반환 (수평선 처리)
+            if (MathUtility.FloatZero(direction.y))
+            {
+                // 수평선에서는 x 값은 y와 무관하게 일정
+                return p.x; 
+            }
             // y축을 기준으로 p의 위치가 어느 비율인지 확인한다.
             var t = (y - Start.y) / direction.y;
             // y비율을 통해서 p의 x 위치도 구해준다.
@@ -167,7 +172,7 @@ namespace Swewep_Line_Algorithm
 
         public override string ToString()
         {
-            return ID == "" ? "[" + Start + " -> " + End + "]" : ID;
+            return ID + " : [" + Start.ToString() + " -> " + End.ToString() + "]";
         }
 
         // 점 a, b를 지나는 직선과 점 c, d를 지나는 직선의 교차점 x를 반환한다.

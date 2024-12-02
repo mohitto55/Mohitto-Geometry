@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Monotone;
+using Sirenix.Utilities;
 using UnityEditor.Build;
 using UnityEngine;
 
@@ -11,33 +12,42 @@ namespace Monotone
     {
         public static IEnumerator MonotoneTriangulation(HalfEdgeData polygon, HalfEdgeDebugValue debugHalfEdgeDebug)
         {
-           yield return MakeMonotone(polygon, polygon.faces.First(), 0);
-            HalfEdgeData monotone = polygon;
+            MapOverlay.StartMapOverlay(polygon, polygon.faces[0], polygon.faces[1]);
+
+            List<HalfEdgeVertex> vertices = polygon.faces[1].GetConnectedVertices();
+
+            //MapOverlay.StartMapOverlay(polygon, polygon.faces[0], polygon.faces[1]);
+             yield return MakeMonotone(polygon, debugHalfEdgeDebug, 0.5f);
+            // HalfEdgeData monotone = polygon;
+            // List<HalfEdgeFace> faces = new List<HalfEdgeFace>();
+            // yield return new WaitForSeconds(0);
+            // Debug.Log("페이스 갯수 " + monotone.faces.Count);
+            // for (int i = 0; i < monotone.faces.Count; i++)
+            // {
+            //     faces.Add(monotone.faces[i]);
+            // }
+            //
+            // for (int i = 0; i < faces.Count; i++)
+            // {
+            //     Debug.Log("페이스 " + i + " " + faces[i].GetConnectedEdges().Count);
+            //     //yield return HalfEdgeDebug.TravelFaceVertex(polygon, faces[i], debugHalfEdgeDebug, 0.2f);
+            //     yield return MonotoneTriangulation(polygon, faces[i], debugHalfEdgeDebug, 0.3f);
+            // }
+            //yield return MonotoneTriangulation(polygon, faces, debugHalfEdgeDebug, 0.3f);
+
             //HalfEdgeDebug.DebugHalfEdgeData(polygon);
-            List<HalfEdgeFace> faces = new List<HalfEdgeFace>();
-            yield return new WaitForSeconds(0);
-            Debug.Log("페이스 갯수 " + monotone.faces.Count);
-            for (int i = 0; i < monotone.faces.Count; i++)
-            {
-                faces.Add(monotone.faces[i]);
-            }
-            
-             for (int i = 0; i < faces.Count; i++)
-             {
-                 Debug.Log("페이스 " + i + " " + faces[i].GetConnectedEdges().Count);
-                 //yield return HalfEdgeDebug.TravelFaceVertex(polygon, faces[i], debugHalfEdgeDebug, 0.2f);
-                 yield return MonotoneTriangulation(polygon, faces[i], debugHalfEdgeDebug, 0.3f);
-             }
-            HalfEdgeDebug.DebugHalfEdgeData(polygon);
-            //Debug.Log("삼각분할 끝");
             yield return null;
         }
 
-        public static IEnumerator MonotoneTriangulation(HalfEdgeData halfEdgeData, HalfEdgeFace monotoneFace, HalfEdgeDebugValue debugHalfEdgeDebug, float delay = 1)
+        public static IEnumerator MonotoneTriangulation(HalfEdgeData halfEdgeData, List<HalfEdgeFace> monotoneFaces, HalfEdgeDebugValue debugHalfEdgeDebug, float delay = 1)
         {
              SortedSet<HalfEdge> sortedEdges = new SortedSet<HalfEdge>(new MonotoneEdgeTriangulationComparer());
-             
-             List<HalfEdge> edges = monotoneFace.GetConnectedEdges();
+
+             List<HalfEdge> edges = new List<HalfEdge>();
+             for (int i = 0; i < monotoneFaces.Count; i++)
+             {
+                 edges.AddRange(monotoneFaces[i].GetConnectedEdges());
+             }
              sortedEdges.UnionWith(edges);
              
              // Stack으로는 중간에 있는 요소를 없앨 수 없어서 LinkedList로 한다.
@@ -174,17 +184,8 @@ namespace Monotone
                          if (internalAngle >= 0)
                          {
                              // Chain이 바뀌면 어차피 맨 마지막 요소는 이어져 있을 것이기 떄문에 없애준다.
-                             Debug.Log("인터널 각도 " + internalAngle);
+                             halfEdgeData.AddDiagonal(top0.vertex, top2.vertex);
                              
-                             // 서로 이미 연결되어 있지 않은 정점이라면 연결한다.
-                             // 주로 마지막 vertex 검사에서 유용하다
-                             if (!HalfEdgeUtility.IsConnectedVertex(top0.vertex, top2.vertex))
-                             {
-                                 Debug.Log(top0.vertex.Coordinate + " " + top2.vertex.Coordinate);
-
-                                 halfEdgeData.AddDiagonal(top0.vertex, top2.vertex);
-                             }
-
                              s.RemoveFirst();
                              s.RemoveFirst();
                              s.AddFirst(top0);
@@ -207,13 +208,11 @@ namespace Monotone
                      while (s.Count >= 2)
                      {
                          Debug.Log("진짜 갯수 " + s.First.Value.vertex.Coordinate + " " + HalfEdgeUtility.GetEdgesAdjacentToAVertexBruteForce(halfEdgeData, s.First.Value.vertex).Count);
-                         if(!HalfEdgeUtility.IsConnectedVertex(s.Last.Value.vertex, uj.vertex))
                              halfEdgeData.AddDiagonal(s.Last.Value.vertex, uj.vertex);
                          s.RemoveLast();
                          yield return new WaitForSeconds(delay);
                      }
                      // Q의 오직 하나 남은 vertex랑 연결하기
-                     if(!HalfEdgeUtility.IsConnectedVertex(s.First.Value.vertex, uj.vertex))
                          halfEdgeData.AddDiagonal(s.First.Value.vertex, uj.vertex);
                      s.AddFirst(uj);
                      foreach (var VARIABLE in s)
@@ -232,19 +231,23 @@ namespace Monotone
             public Vector2 value;
             public Color color;
         }
-        public static IEnumerator MakeMonotone(HalfEdgeData halfEdgeData, HalfEdgeFace face, float debugDelay = 0.5f)
+        public static IEnumerator MakeMonotone(HalfEdgeData halfEdgeData, HalfEdgeDebugValue debugHalfEdgeDebug, float debugDelay = 0.5f)
         {
             MonotoneVertexComparer monotoneVertexComparer = new MonotoneVertexComparer();
             SortedSet<HalfEdgeVertex> sortedVertexs = new SortedSet<HalfEdgeVertex>(monotoneVertexComparer);
-            
+            List<HalfEdge> ConnectedEdges = new List<HalfEdge>();
             // polygon의 vertices들은 반대쪽 vertex도 포함되지만 compare에 의해서 위치가 같은 vertex는 삭제시킨다.
-            sortedVertexs.UnionWith(face.GetConnectedVertices());
-            
+            for (int i = 0; i < halfEdgeData.faces.Count; i++)
+            {
+                HalfEdgeFace face = halfEdgeData.faces[i];
+                sortedVertexs.UnionWith(face.GetConnectedVertices());
+                ConnectedEdges.AddRange(HalfEdgeUtility.DetermineVertexType(face));
+            }
+
             MonotoneEdgeComparer monotoneEdgeComparer = new MonotoneEdgeComparer();
             // SweepLine과 교차중인 Edge들만을 넣는다
             SortedSet<HalfEdge> statusEdges = new SortedSet<HalfEdge>(monotoneEdgeComparer);
-            
-            List<HalfEdge> ConnectedEdges = HalfEdgeUtility.DetermineVertexType(face);
+
             // 헬퍼로 사용할 딕셔너리
             Dictionary<HalfEdge, HalfEdgeVertex> helperDic = new Dictionary<HalfEdge, HalfEdgeVertex>();
             foreach (HalfEdge edge in ConnectedEdges)
@@ -260,14 +263,14 @@ namespace Monotone
                 yield return new WaitForSeconds(debugDelay);
                 // 이미 사용한 버텍스는 삭제시킨다.
                 sortedVertexs.Remove(vertex);
-
+                debugHalfEdgeDebug.value = vertex.Coordinate;
                 //Handle
-                HandleVertex(vertex, statusEdges, helperDic, halfEdgeData, face);
+                HandleVertex(vertex, statusEdges, helperDic, halfEdgeData);
             }
         }
 
         public static void HandleVertex(HalfEdgeVertex vertex, SortedSet<HalfEdge> statusEdges,
-            Dictionary<HalfEdge, HalfEdgeVertex> helperDic, HalfEdgeData halfEdgeData, HalfEdgeFace face)
+            Dictionary<HalfEdge, HalfEdgeVertex> helperDic, HalfEdgeData halfEdgeData)
         {
             // 시작부분이니 상태추가
             // LeftEdge의 부모를 찾아야한다.
@@ -275,6 +278,13 @@ namespace Monotone
             {
                 HalfEdge leftEdge = vertex.LeftEdge();
                 statusEdges.Add(leftEdge);
+
+                HalfEdgeVertex helperVertex = FindHelper(leftEdge, helperDic);
+                if (helperVertex != null)
+                {
+                    halfEdgeData.AddDiagonal(helperVertex, vertex);
+                }
+
                 helperDic[leftEdge] = vertex;
             }
             
@@ -301,7 +311,6 @@ namespace Monotone
             {
                 HalfEdge leftEdge = FindLeftEdge(vertex, statusEdges);
                 HalfEdgeVertex helperVertex = FindHelper(leftEdge, helperDic);
-                Debug.LogWarning("SPLIT " + vertex.Coordinate + " " + helperVertex.Coordinate + " " + leftEdge.vertex.Coordinate);
                 halfEdgeData.AddDiagonal(helperVertex, vertex);
                 helperDic[leftEdge] = vertex;
                 HalfEdge rightEdge = vertex.RightEdge();
@@ -350,7 +359,6 @@ namespace Monotone
                     {
                         halfEdgeData.AddDiagonal(helper, vertex);
                     }
-                    Debug.LogWarning("SPLIT : " + aboveEdge.vertex.Coordinate + " " + belowEdge.vertex.Coordinate);
                     statusEdges.Remove(aboveEdge);
                     statusEdges.Add(belowEdge);
                     helperDic[belowEdge] = vertex;
@@ -362,7 +370,6 @@ namespace Monotone
                         return;
                     
                     statusEdges.Add(leftEdge);
-                    Debug.Log(vertex.Coordinate);
                     HalfEdgeVertex helper = FindHelper(leftEdge, helperDic);
                     if (helper == null)
                         return;
@@ -460,9 +467,9 @@ namespace Monotone
             {
                 HalfEdgeVertex p1 = edge.vertex;
                 HalfEdgeVertex p2 = edge.prev.vertex;
-                Debug.Log("래프트찾기" + vertex.Coordinate + " " + sortedEdges.Count);
+                //Debug.Log("래프트찾기" + vertex.Coordinate + " " + sortedEdges.Count);
 
-                Debug.Log(p1.Coordinate + " " + p2.Coordinate);
+                //Debug.Log(p1.Coordinate + " " + p2.Coordinate);
                 // 탐색중인 Edge가 vertex를 포함하면 다음으로
                 if (p1.Coordinate == vertex.Coordinate || p2.Coordinate == vertex.Coordinate)
                     continue;

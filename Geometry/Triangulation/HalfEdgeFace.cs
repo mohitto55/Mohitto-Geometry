@@ -6,7 +6,6 @@ namespace Monotone
     public class HalfEdgeFace
     {
         public HalfEdge OuterComponent;
-        public HalfEdge InnerComponent;
         public HalfEdgeFace()
         {
             this.OuterComponent = null;

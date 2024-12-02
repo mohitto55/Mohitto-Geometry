@@ -248,18 +248,36 @@ public static class HalfEdgeUtility
         Vector2 v2 = next.Coordinate - cur.Coordinate;
         float angle = MyMath.SignedAngle(v1, v2);
 
-        // if (CheckParallel(prev, next))
-        // {
-        //     return;
-        // }
-        // else if (CheckParallel(next, prev))
-        // {
-        //     return;
-        // }
-            
+        Vector2 prevP = prev.Coordinate;
+        Vector2 curP = cur.Coordinate;
+        Vector2 nextP = next.Coordinate;
+
+        int compareBiggerPrevCur = MyMath.CompareFloat(prevP.y, curP.y);
+        int compareBiggerNextCur = MyMath.CompareFloat(nextP.y, curP.y);
+        
+        // Monotone Composite를 할때는 Y가 큰순, X가 작은순으로 정렬된다.
+        // 그러므로 위에 있으면서 왼쪽부터 차례로 스윕라인을 하면서 시도된다는 뜻인데
+        // 그러니까 같은 Y면서 X가 작은게 더 높이 있다고 판단을 할 수 있다.
+        if (compareBiggerPrevCur == 0)
+        {
+            if(MyMath.CompareFloat(prevP.x, curP.x) < 0)
+                prevP.y += 1;
+            else
+                prevP.y -= 1;
+            compareBiggerPrevCur = MyMath.CompareFloat(prevP.y, curP.y);
+        }
+        if (compareBiggerNextCur == 0)
+        {
+            if(MyMath.CompareFloat(nextP.x, curP.x) < 0)
+                nextP.y += 1;
+            else
+                nextP.y -= 1;
+            compareBiggerNextCur = MyMath.CompareFloat(nextP.y, curP.y);
+
+        }
+        
         // 양방향 노드들이 자신보다 낮다면
-        if ((MyMath.CompareFloat( prev.Coordinate.y, cur.Coordinate.y) <= 0 && MyMath.CompareFloat( next.Coordinate.y, cur.Coordinate.y) < 0) ||
-            MyMath.CompareFloat( prev.Coordinate.y, cur.Coordinate.y) < 0 && MyMath.CompareFloat( next.Coordinate.y, cur.Coordinate.y) <= 0)
+        if ((compareBiggerPrevCur < 0 && compareBiggerNextCur < 0))
         {
             if (angle >= 0) cur.type = HalfEdgeVertex.Vtype.START;
             else if (angle <= 0) cur.type = HalfEdgeVertex.Vtype.SPLIT;
@@ -269,8 +287,7 @@ public static class HalfEdgeUtility
             }
         }
         // 양방향 노드들이 자신보다 높다면
-        else  if ((MyMath.CompareFloat( prev.Coordinate.y, cur.Coordinate.y) >= 0 && MyMath.CompareFloat( next.Coordinate.y, cur.Coordinate.y) > 0) ||
-                  MyMath.CompareFloat( prev.Coordinate.y, cur.Coordinate.y) > 0 && MyMath.CompareFloat( next.Coordinate.y, cur.Coordinate.y) >= 0)
+        else if ((compareBiggerPrevCur > 0 && compareBiggerNextCur > 0))
         {
             // 내부각이 180도 미만이고 
             if (angle >= 0) cur.type = HalfEdgeVertex.Vtype.END;

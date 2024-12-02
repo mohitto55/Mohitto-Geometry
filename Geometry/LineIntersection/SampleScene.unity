@@ -42,7 +42,8 @@ RenderSettings:
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 12
+  serializedVersion: 13
+  m_BakeOnSceneLoad: 0
   m_GISettings:
     serializedVersion: 2
     m_BounceScale: 1
@@ -428,7 +429,7 @@ MonoBehaviour:
   PointRadius: 0.5
   IntersectionPointRadius: 0.25
   DebugPointRadius: 0.4
-  DebugWaitSecond: 0.1
+  DebugWaitSecond: 0.05
 --- !u!4 &1076491277
 Transform:
   m_ObjectHideFlags: 0

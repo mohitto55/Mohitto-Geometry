@@ -48,6 +48,20 @@ public class SweepLineObject : MonoBehaviour
 
     private DebugPoint debugPoint;
 
+    private void Awake()
+    {
+        Endpoints = new List<Segment>();
+        intersectionPoints = new List<Point>();
+        int id = 0;
+        for (int i = 0; i < Transforms.Count; i++)
+        {
+            Endpoints.Add(new Segment(Transforms[i].p1.position, Transforms[i].p2.position, id++));
+        }
+
+        debugPoint = new DebugPoint();
+        StartCoroutine(Swewep_Line_Algorithm.LS.SweepIntersections(Endpoints, intersectionPoints, debugPoint, DebugWaitSecond, false));
+    }
+
     private void Update()
     {
         if (Input.GetMouseButtonDown(0))

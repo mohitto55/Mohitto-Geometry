@@ -25,8 +25,11 @@ public class ListBehaviour<T>
 
     ~ListBehaviour()
     {
-        for (int i = 0; i < components.Count; i++)
-            components[i].DestroyComponent();
+        if(components != null)
+            for (int i = 0; i < components.Count; i++)
+            {
+                components[i].DestroyComponent();
+            }
     }
 
     public void SetItems(List<T> changeItems)
@@ -37,9 +40,11 @@ public class ListBehaviour<T>
     public void SetComponent(ListComponent<T> changeComponent)
     {
         this.comp = changeComponent;
-        // for(int i = 0; i < components.Count; i++)
-        //     components[i].DestroyComponent();
-        // components = new List<ListComponent<T>>();
+
+        for (int i = 0; i < components.Count; i++)
+            components[i].DestroyComponent();
+        
+        components = new List<ListComponent<T>>();
     }
 
     public void ResetComponent()
@@ -89,6 +94,7 @@ public class ListBehaviour<T>
 
         while (items.Count > components.Count)
         {
+            Debug.Log("SDSD");
             // 이건 하위 객체로 안됀다.
             // ListComponent<T> copy = new ListComponent<T>(comp);
             // components.Add(copy);
@@ -145,8 +151,7 @@ public class GenerateObject<T, TObj> : ListComponent<T> where TObj : Object
     public GenerateObject(TObj objPrefab, Action<GenerateObject<T, TObj>, T, TObj> onUpdate = null)
     {
         this.prefab = objPrefab;
-        if (onUpdate != null)
-            this.OnUpdate += onUpdate;
+        this.OnUpdate = onUpdate;
     }
 
     public GenerateObject(GenerateObject<T, TObj> copy) : base(copy)
@@ -157,38 +162,38 @@ public class GenerateObject<T, TObj> : ListComponent<T> where TObj : Object
 
     ~GenerateObject()
     {
-        if (spawnedObject)
+        if (spawnedObject && spawnedObject.GameObject())
         {
-            GameObject.Destroy(spawnedObject);
+            GameObject.DestroyImmediate(spawnedObject.GameObject());
         }
     }
 
     public override void Generate(T obj)
     {
-        spawnedObject = GameObject.Instantiate(prefab);
+        if(prefab)
+            spawnedObject = GameObject.Instantiate(prefab);
     }
 
     public override bool Update(T obj)
     {
         if (!prefab)
             return false;
+        
         if (OnUpdate == null)
             return false;
+        
+        if (spawnedObject == null)
+        {
+            spawnedObject = GameObject.Instantiate(prefab);
+        }
+        
         try
         {
-            if (OnUpdate != null)
-            {
-                OnUpdate.Invoke(this, obj, spawnedObject);
-            }
-
-            if (spawnedObject == null)
-            {
-                spawnedObject = GameObject.Instantiate(prefab);
-            }
+            OnUpdate.Invoke(this, obj, spawnedObject);
         }
         catch (Exception e)
         {
-            Debug.LogWarning("Null obj");
+            Debug.LogWarning("Null obj " + e);
             return false;
         }
 
@@ -197,7 +202,7 @@ public class GenerateObject<T, TObj> : ListComponent<T> where TObj : Object
 
     public override void DestroyComponent()
     {
-        if (spawnedObject.GameObject())
+        if (spawnedObject && spawnedObject.GameObject())
         {
             GameObject.DestroyImmediate(spawnedObject.GameObject());
         }
@@ -215,7 +220,9 @@ public class GenerateObject<T, TObj> : ListComponent<T> where TObj : Object
         // 이 작업은 인라인과 [SerializeReference]로 하는 두 가지 방식이 있습니다.
         GenerateObject<T, TObj> copy = (GenerateObject<T, TObj>)Activator.CreateInstance(this.GetType(), this);
         copy.Generate(responseItem);
+        copy.spawnedObject = null;
         copy.OnUpdate = OnUpdate;
+        copy.tmproUpdate = tmproUpdate;
         copy.prefab = prefab;
         return copy;
     }
