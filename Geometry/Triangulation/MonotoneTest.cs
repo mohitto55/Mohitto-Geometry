@@ -70,10 +70,10 @@ namespace Monotone
         public void InitPolygon()
         {
             EdgeData = new HalfEdgeData(MyMath.GetVector2ListFromTransform(vertexs[0].Transforms));
-            //for (int i = 1; i < vertexs.Count; i++)
-            //{
-            //    EdgeData.AddPolygon(MyMath.GetVector2ListFromTransform(vertexs[1].Transforms));
-            //}
+            for (int i = 1; i < vertexs.Count; i++)
+            {
+                EdgeData.AddPolygon(MyMath.GetVector2ListFromTransform(vertexs[i].Transforms));
+            }
         }
         void OnDrawGizmos()
         {

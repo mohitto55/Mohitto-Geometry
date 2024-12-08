@@ -37,7 +37,7 @@ public static class HalfEdgeDebug
     }
     public static IEnumerator TravelFaceVertex(HalfEdgeData data, HalfEdgeFace face, Monotone.Monotone.HalfEdgeDebugValue point, float delay = 1)
     {
-        List<HalfEdge> edges = face.GetConnectedEdges();
+        List<HalfEdge> edges = face.GetInnerEdges();
         for (int i = 0; i < edges.Count; i++)
         {
             point.value = edges[i].vertex.Coordinate;
@@ -63,8 +63,8 @@ public static class HalfEdgeDebug
 
             Debug.Log(i+"번째 Face");
             Debug.Log("해쉬 : " + f.GetHashCode());
-            Debug.Log("내부 Edges들 갯수 : " + f.GetConnectedEdges().Count);
-            Debug.Log("외부 Edges들 갯수 : " + f.GetTwinConnectedEdges().Count);
+            Debug.Log("내부 Edges들 갯수 : " + f.GetInnerEdges().Count);
+            Debug.Log("외부 Edges들 갯수 : " + f.GetOuterEdges().Count);
         }
         
         Debug.Log("============Vertex 정보 출력============");

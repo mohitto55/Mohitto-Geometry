@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Monotone;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -128,7 +129,7 @@ namespace Swewep_Line_Algorithm
 
                 // 스윕라인의 교차점을 구하는 문제
         // Plane안에 있는 Segment들을 넣는다.
-        public static List<Point> SweepIntersections(List<Segment> segments, Action<List<Segment>, Point> intersctionCallback = null)
+        public static List<Point> SweepIntersections(HalfEdgeData polygon, List<Segment> segments, Action<List<Segment>, Point> intersctionCallback = null)
         {
             List<Point> intersect = new List<Point>();
 // 이벤트Q
@@ -138,6 +139,12 @@ namespace Swewep_Line_Algorithm
             // 초기화 방법은 이렇다
             // 세그먼트의 endpoint를 Q에 삽입하되, 상단 끝점이 삽입될 때는 해당 세그먼트가 함께 저장되어야한다.
             SortedDictionary<Point, EventPoint> Q = new SortedDictionary<Point, EventPoint>(new PointComparer());
+            Dictionary<>
+            foreach (var face in polygon.faces)
+            {
+                face.OuterComponent
+            }
+            
             foreach (var segment in segments)
             {
                 // 세그먼트의 끝점들을 Q에 삽입하되, **upper endpoint**가 삽입될 때는 해당 세그먼트가 함께 저장되어야 한다.

@@ -15,7 +15,7 @@ namespace Monotone
             this.OuterComponent = outerComponent;
         }
 
-        public List<HalfEdge> GetConnectedEdges()
+        public List<HalfEdge> GetInnerEdges()
         {
             List<HalfEdge> edges = new List<HalfEdge>();
             HalfEdge curEdge = OuterComponent;
@@ -31,7 +31,7 @@ namespace Monotone
             }
             return edges;
         }
-        public List<HalfEdge> GetTwinConnectedEdges()
+        public List<HalfEdge> GetOuterEdges()
         {
             List<HalfEdge> edges = new List<HalfEdge>();
             HalfEdge curEdge = OuterComponent.twin;
@@ -48,7 +48,7 @@ namespace Monotone
             return edges;
         }
         
-        public List<HalfEdgeVertex> GetConnectedVertices()
+        public List<HalfEdgeVertex> GetAdjacentVertices()
         {
             List<HalfEdgeVertex> vertices = new List<HalfEdgeVertex>();
             HalfEdge curEdge = OuterComponent;
@@ -67,11 +67,11 @@ namespace Monotone
 
         // public HalfEdge GetEdgeIncludeVertex(HalfEdgeVertex vertex)
         // {
-        //     HalfEdge curEdge = OuterComponent;
+        //     HalfEdge curEdge = InnerComponent;
         //     if (curEdge != null)
         //     {
         //         curEdge = curEdge.next;
-        //         while (curEdge != null && curEdge != OuterComponent)
+        //         while (curEdge != null && curEdge != InnerComponent)
         //         {
         //             if (curEdge.vertex == vertex)
         //                 return curEdge;

@@ -12,12 +12,12 @@ namespace Monotone
     {
         public static IEnumerator MonotoneTriangulation(HalfEdgeData polygon, HalfEdgeDebugValue debugHalfEdgeDebug)
         {
-            //MapOverlay.StartMapOverlay(polygon, polygon.faces[0], polygon.faces[1]);
+            MapOverlay.MonotoneOverlay(polygon);
 
-            //List<HalfEdgeVertex> vertices = polygon.faces[1].GetConnectedVertices();
+            //List<HalfEdgeVertex> vertices = polygon.faces[1].GetAdjacentVertices();
 
             //MapOverlay.StartMapOverlay(polygon, polygon.faces[0], polygon.faces[1]);
-             yield return MakeMonotone(polygon, debugHalfEdgeDebug, 0.5f);
+            yield return MakeMonotone(polygon, debugHalfEdgeDebug, 0.5f);
             HalfEdgeData monotone = polygon;
             List<HalfEdgeFace> faces = new List<HalfEdgeFace>();
             yield return new WaitForSeconds(0);
@@ -29,7 +29,7 @@ namespace Monotone
 
             for (int i = 0; i < faces.Count; i++)
             {
-                Debug.Log("페이스 " + i + " " + faces[i].GetConnectedEdges().Count);
+                Debug.Log("페이스 " + i + " " + faces[i].GetInnerEdges().Count);
                 //yield return HalfEdgeDebug.TravelFaceVertex(polygon, faces[i], debugHalfEdgeDebug, 0.2f);
                 yield return MonotoneTriangulation(polygon, faces[i], debugHalfEdgeDebug, 0.3f);
             }
@@ -44,7 +44,7 @@ namespace Monotone
              SortedSet<HalfEdge> sortedEdges = new SortedSet<HalfEdge>(new MonotoneEdgeTriangulationComparer());
 
             List<HalfEdge> edges = new List<HalfEdge>();
-            edges.AddRange(monotoneFace.GetConnectedEdges());
+            edges.AddRange(monotoneFace.GetInnerEdges());
             sortedEdges.UnionWith(edges);
 
             // Stack으로는 중간에 있는 요소를 없앨 수 없어서 LinkedList로 한다.
@@ -237,7 +237,7 @@ namespace Monotone
             for (int i = 0; i < halfEdgeData.faces.Count; i++)
             {
                 HalfEdgeFace face = halfEdgeData.faces[i];
-                sortedVertexs.UnionWith(face.GetConnectedVertices());
+                sortedVertexs.UnionWith(face.GetAdjacentVertices());
                 ConnectedEdges.AddRange(HalfEdgeUtility.DetermineVertexType(face));
             }
 

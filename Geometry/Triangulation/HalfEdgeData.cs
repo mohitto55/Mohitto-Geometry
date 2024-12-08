@@ -204,7 +204,7 @@ namespace Monotone
             upper.IncidentEdge = leftEdge;
 
             leftEdge.incidentFace = leftEdge.next.incidentFace;
-            // 이전에 저장한 Edge가 outerComponent일 가능성이 있기 떄문에 데이터 보장을 위해 이렇게 해준다.
+            // 이전에 저장한 Edge가 InnerComponent일 가능성이 있기 떄문에 데이터 보장을 위해 이렇게 해준다.
             leftEdge.incidentFace.OuterComponent = leftEdge;
 
             HalfEdgeFace rightFace = new HalfEdgeFace { OuterComponent = rightEdge };

@@ -214,7 +214,7 @@ public static class HalfEdgeUtility
     /// <returns></returns>
     public static bool IsFaceCounterClockwise(HalfEdgeFace face)
     {
-        List<Vector2> vector2s = VerticesToVec(face.GetConnectedVertices());
+        List<Vector2> vector2s = VerticesToVec(face.GetAdjacentVertices());
         return MyMath.IsCounterClockwise(vector2s);
     }
 
@@ -231,7 +231,7 @@ public static class HalfEdgeUtility
 
     public static List<HalfEdge> DetermineVertexType(HalfEdgeFace face)
     {
-        List<HalfEdge> ConnectedEdges = face.GetConnectedEdges();
+        List<HalfEdge> ConnectedEdges = face.GetInnerEdges();
         // 완성된 버텍스들을 순회하며 타입을 정한다.
         for (int i = 0; i < ConnectedEdges.Count; i++)
         {
@@ -242,6 +242,52 @@ public static class HalfEdgeUtility
         return ConnectedEdges;
     }
     
+    /// <summary>
+    /// 사이클이 Innder인지 Outer인지 판별한다.
+    /// 맨 왼쪽 정점의 각도가 180보다 작으면 Outer, 180보다 그면 Inner다.
+    /// </summary>
+    /// <param name="edge"></param>
+    /// <returns></returns>
+    public static float CheckInnerCycle(HalfEdge edge)
+    {
+        if (edge == null) return 0;
+
+        HalfEdge leftEdge = FindLeftmostEdgeInCycle(edge);
+
+        if (leftEdge == null) return 0;
+        
+        float e1x = leftEdge.vertex.Coordinate.x;
+        float e1y = leftEdge.vertex.Coordinate.y;
+        float e2x = leftEdge.next.vertex.Coordinate.y;
+        float e2y = leftEdge.next.vertex.Coordinate.y;
+        return (e1x * e2y) - (e1y * e2x);
+    }
+
+    /// <summary>
+    /// 사이클에서 가장 왼쪽에 있는 Edge를 반환한다.
+    /// </summary>
+    /// <param name="edge"></param>
+    /// <returns></returns>
+    public static HalfEdge FindLeftmostEdgeInCycle(HalfEdge edge)
+    {
+        if (edge == null) return null;
+        
+        HalfEdge startEdge = edge;
+        HalfEdge searchEdge = edge;
+        HalfEdge leftEdge = searchEdge;
+        do
+        {
+            if(searchEdge == null) return null;
+            if(searchEdge.vertex.Coordinate.x < leftEdge.vertex.Coordinate.x)
+            {
+                leftEdge = searchEdge;
+            }
+            searchEdge = searchEdge.next;
+        }
+        while (startEdge != edge);
+
+        return leftEdge;
+    }
     public static void DetermineType(HalfEdgeVertex prev, HalfEdgeVertex cur, HalfEdgeVertex next)
     {
         Vector2 v1 = prev.Coordinate - cur.Coordinate;
