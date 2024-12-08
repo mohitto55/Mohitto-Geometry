@@ -24,5 +24,10 @@ namespace Monotone
         {
             return twin.vertex;
         }
+
+        public override string ToString()
+        {
+            return prev?.vertex.Coordinate.ToString() + vertex?.Coordinate.ToString() + next?.vertex.Coordinate.ToString();
+        }
     }
 }

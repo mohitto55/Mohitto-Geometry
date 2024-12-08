@@ -10,41 +10,37 @@ namespace Monotone
 {
     public static class Monotone
     {
-        public static IEnumerator MonotoneTriangulation(HalfEdgeData polygon, HalfEdgeDebugValue debugHalfEdgeDebug)
+        public static IEnumerator MonotoneTriangulation(HalfEdgeData polygon, List<HalfEdgeDebugValue> debugHalfEdgeDebug)
         {
-            MapOverlay.MonotoneOverlay(polygon);
+             MapOverlay.MonotoneOverlay(polygon);
+            
+             yield return MakeMonotone(polygon, debugHalfEdgeDebug, 0.5f);
+             HalfEdgeData monotone = polygon;
+             List<HalfEdgeFace> faces = new List<HalfEdgeFace>();
 
-            //List<HalfEdgeVertex> vertices = polygon.faces[1].GetAdjacentVertices();
-
-            //MapOverlay.StartMapOverlay(polygon, polygon.faces[0], polygon.faces[1]);
-            yield return MakeMonotone(polygon, debugHalfEdgeDebug, 0.5f);
-            HalfEdgeData monotone = polygon;
-            List<HalfEdgeFace> faces = new List<HalfEdgeFace>();
-            yield return new WaitForSeconds(0);
-            Debug.Log("페이스 갯수 " + monotone.faces.Count);
-            for (int i = 0; i < monotone.faces.Count; i++)
-            {
-                faces.Add(monotone.faces[i]);
-            }
-
-            for (int i = 0; i < faces.Count; i++)
-            {
-                Debug.Log("페이스 " + i + " " + faces[i].GetInnerEdges().Count);
-                //yield return HalfEdgeDebug.TravelFaceVertex(polygon, faces[i], debugHalfEdgeDebug, 0.2f);
-                yield return MonotoneTriangulation(polygon, faces[i], debugHalfEdgeDebug, 0.3f);
-            }
-            //yield return MonotoneTriangulation(polygon, faces, debugHalfEdgeDebug, 0.3f);
+             // Debug.Log("페이스 갯수 " + monotone.faces.Count);
+             for (int i = 0; i < monotone.faces.Count; i++)
+             {
+                 faces.Add(monotone.faces[i]);
+             }
+             
+             for (int i = 0; i < faces.Count; i++)
+             {
+                 Debug.Log("페이스 " + i + " " + faces[i].GetOuterEdges().Count);
+                 //yield return HalfEdgeDebug.TravelFaceVertex(polygon, faces[i], debugHalfEdgeDebug, 0.2f);
+                 yield return MonotoneTriangulation(polygon, faces[i], debugHalfEdgeDebug, 0.3f);
+             }
 
             //HalfEdgeDebug.DebugHalfEdgeData(polygon);
             yield return null;
         }
 
-        public static IEnumerator MonotoneTriangulation(HalfEdgeData halfEdgeData, HalfEdgeFace monotoneFace, HalfEdgeDebugValue debugHalfEdgeDebug, float delay = 1)
+        public static IEnumerator MonotoneTriangulation(HalfEdgeData halfEdgeData, HalfEdgeFace monotoneFace, List<HalfEdgeDebugValue> debugHalfEdgeDebug, float delay = 1)
         {
              SortedSet<HalfEdge> sortedEdges = new SortedSet<HalfEdge>(new MonotoneEdgeTriangulationComparer());
 
             List<HalfEdge> edges = new List<HalfEdge>();
-            edges.AddRange(monotoneFace.GetInnerEdges());
+            edges.AddRange(monotoneFace.GetOuterEdges());
             sortedEdges.UnionWith(edges);
 
             // Stack으로는 중간에 있는 요소를 없앨 수 없어서 LinkedList로 한다.
@@ -139,7 +135,8 @@ namespace Monotone
              for (int j = 2; j < sortedEdges.Count; j++)
              {
                  HalfEdge uj = sortedEdges.ElementAt(j);
-                 debugHalfEdgeDebug.value = uj.vertex.Coordinate;
+                 debugHalfEdgeDebug.Clear();
+                 debugHalfEdgeDebug.Add(new HalfEdgeDebugValue(uj.vertex.Coordinate));
                  Debug.Log("===========" + uj.vertex.Coordinate + "===========");
                  int sortedVertexChain = chainDic[uj];
                  Debug.Log("===========" +s.First.Value.vertex.Coordinate + "===========");
@@ -190,7 +187,8 @@ namespace Monotone
                              Debug.Log("인터널의 마지막 " + top0.vertex.Coordinate);
 
                          }
-                         debugHalfEdgeDebug.value = uj.vertex.Coordinate;
+                         debugHalfEdgeDebug.Clear();
+                         debugHalfEdgeDebug.Add(new HalfEdgeDebugValue(uj.vertex.Coordinate));
                          yield return new WaitForSeconds(delay);
                      } while (internalAngle >= 0 && s.Count > 2);
                  }
@@ -227,10 +225,17 @@ namespace Monotone
         {
             public Vector2 value;
             public Color color;
+            public HalfEdgeDebugValue(){}
+
+            public HalfEdgeDebugValue(Vector2 vector2)
+            {
+                value = vector2;
+            }
         }
-        public static IEnumerator MakeMonotone(HalfEdgeData halfEdgeData, HalfEdgeDebugValue debugHalfEdgeDebug, float debugDelay = 0.5f)
+        public static IEnumerator MakeMonotone(HalfEdgeData halfEdgeData, List<HalfEdgeDebugValue> debugHalfEdgeDebug, float debugDelay = 0.5f)
         {
             MonotoneVertexComparer monotoneVertexComparer = new MonotoneVertexComparer();
+            // Q : v를 정렬한다.
             SortedSet<HalfEdgeVertex> sortedVertexs = new SortedSet<HalfEdgeVertex>(monotoneVertexComparer);
             List<HalfEdge> ConnectedEdges = new List<HalfEdge>();
             // polygon의 vertices들은 반대쪽 vertex도 포함되지만 compare에 의해서 위치가 같은 vertex는 삭제시킨다.
@@ -242,9 +247,9 @@ namespace Monotone
             }
 
             MonotoneEdgeComparer monotoneEdgeComparer = new MonotoneEdgeComparer();
-            // SweepLine과 교차중인 Edge들만을 넣는다
+            // T : SweepLine과 교차중인 Edge들만을 넣는다
             SortedSet<HalfEdge> statusEdges = new SortedSet<HalfEdge>(monotoneEdgeComparer);
-
+            
             // 헬퍼로 사용할 딕셔너리
             Dictionary<HalfEdge, HalfEdgeVertex> helperDic = new Dictionary<HalfEdge, HalfEdgeVertex>();
             foreach (HalfEdge edge in ConnectedEdges)
@@ -253,14 +258,22 @@ namespace Monotone
                 helperDic.Add(edge, null);
             }
             
-            // 버텍스 하나씨 탐색
+            // 버텍스 하나씩 탐색
             while (sortedVertexs.Count > 0)
             {
+                debugHalfEdgeDebug.Clear();
+                Debug.Log("statusEdges");
+
+                foreach (var VARIABLE in statusEdges)
+                {
+                    debugHalfEdgeDebug.Add(new HalfEdgeDebugValue(VARIABLE.prev.vertex.Coordinate));
+                    debugHalfEdgeDebug.Add(new HalfEdgeDebugValue(VARIABLE.vertex.Coordinate));
+                    Debug.Log(VARIABLE.prev.vertex + " " +VARIABLE.vertex);
+                }
                 HalfEdgeVertex vertex = sortedVertexs.First();
                 yield return new WaitForSeconds(debugDelay);
                 // 이미 사용한 버텍스는 삭제시킨다.
                 sortedVertexs.Remove(vertex);
-                debugHalfEdgeDebug.value = vertex.Coordinate;
                 //Handle
                 HandleVertex(vertex, statusEdges, helperDic, halfEdgeData);
             }
@@ -345,6 +358,7 @@ namespace Monotone
             // Refular은
             else if (vertex.type == HalfEdgeVertex.Vtype.REGULAR)
             {
+                
                 if (vertex.PolygonInteriorLiesToTheRight())
                 {
                     HalfEdge prevEdge = vertex.IncidentEdge.prev;
@@ -364,12 +378,16 @@ namespace Monotone
                 {
                     HalfEdge leftEdge = FindLeftEdge(vertex, statusEdges);
                     if (leftEdge == null)
+                    {
                         return;
-                    
+                    }
+                    Debug.Log("왼쪽" + leftEdge + " " + vertex);
                     statusEdges.Add(leftEdge);
                     HalfEdgeVertex helper = FindHelper(leftEdge, helperDic);
                     if (helper == null)
                         return;
+                    Debug.Log("왼쪽 헬퍼" + helper + " " + vertex);
+
                     if (helper.type == HalfEdgeVertex.Vtype.MERGE)
                     {
                         halfEdgeData.AddDiagonal(helper, vertex);
@@ -460,13 +478,15 @@ namespace Monotone
         {
             float minDst = float.MaxValue;
             HalfEdge leftEdge = null;
+            Debug.Log("=======================");
+
             foreach (HalfEdge edge in sortedEdges)
             {
                 HalfEdgeVertex p1 = edge.vertex;
                 HalfEdgeVertex p2 = edge.prev.vertex;
-                //Debug.Log("래프트찾기" + vertex.Coordinate + " " + sortedEdges.Count);
+                Debug.Log("래프트찾기" + vertex.Coordinate + " " + sortedEdges.Count);
 
-                //Debug.Log(p1.Coordinate + " " + p2.Coordinate);
+                Debug.Log(p1.Coordinate + " " + p2.Coordinate);
                 // 탐색중인 Edge가 vertex를 포함하면 다음으로
                 if (p1.Coordinate == vertex.Coordinate || p2.Coordinate == vertex.Coordinate)
                     continue;
@@ -503,7 +523,7 @@ namespace Monotone
 
             if (leftEdge != null)
             {
-                //Debug.DrawLine(vertex.Coordinate, vertex.Coordinate + Vector2.left * minDst, Color.green);
+                Debug.DrawLine(vertex.Coordinate, vertex.Coordinate + Vector2.left * minDst, Color.green);
             }
 
             return leftEdge;

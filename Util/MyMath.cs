@@ -71,12 +71,16 @@ public static class MyMath
 
         return points;
     }
-    // 함수: 다각형의 방향을 확인하고 필요한 경우 반대로 정렬
+    /// <summary>
+    /// 반시계 방향으로 정점들 정렬
+    /// </summary>
+    /// <param name="points"></param>
+    /// <returns></returns>
     public static List<Vector2> EnsureCounterClockwise(List<Vector2> points)
     {
         if (!IsCounterClockwise(points))
         {
-            points.Reverse(); // 반시계 방향이면 시계 방향으로 반대로 정렬
+            points.Reverse(); // 시계 방향이면 반시계 방향으로 정렬
         }
         return points;
     }
@@ -86,6 +90,11 @@ public static class MyMath
     // 간단한 사례에 적용된 미적분학입니다. (그래픽을 게시할 기술이 없습니다.) 선분 아래의 면적은 평균 높이(y2+y1)/2에 가로 길이(x2-x1)를 곱한 값과 같습니다. x의 부호 규칙을 주목하세요. 삼각형으로 시도해보면 곧 어떻게 작동하는지 알 수 있을 겁니다. 
     // 사소한 경고: 이 답변은 일반적인 데카르트 좌표계를 가정합니다. 언급할 만한 이유는 HTML5 캔버스와 같은 일부 일반적인 컨텍스트가 역 Y축을 사용하기 때문입니다. 그런 다음 규칙을 뒤집어야 합니다. 면적이 음수이면 곡선 은 시계 방향입니다
     
+    /// <summary>
+    /// 다각형의 방향을 확인 (반시계 방향이면 true, 시계 방향이면 false 반환)
+    /// </summary>
+    /// <param name="points"></param>
+    /// <returns></returns>
     public static bool IsCounterClockwise(List<Vector2> points)
     {
         float area = 0f;

@@ -29,7 +29,7 @@ namespace Monotone
         private ListBehaviour<HalfEdgeVertex> vertexListCompoennt;
         public TextMeshPro tmppropab;
         private HalfEdgeData EdgeData;
-        private Monotone.HalfEdgeDebugValue _halfEdgeDebugValue = new Monotone.HalfEdgeDebugValue();
+        private List<Monotone.HalfEdgeDebugValue> _halfEdgeDebugValue = new List<Monotone.HalfEdgeDebugValue>();
 
         [ReadOnly, ShowInInspector]
         private int VertexCount
@@ -126,9 +126,12 @@ namespace Monotone
                 MyGizmos.DrawWireCicle(vertex.Coordinate, 1, 30);
             }
 
-            _halfEdgeDebugValue.color = Color.red;
-            Gizmos.color = _halfEdgeDebugValue.color;
-            MyGizmos.DrawWireCicle(_halfEdgeDebugValue.value, 2, 30);
+            foreach (var halfEdgeDebugValue in _halfEdgeDebugValue)
+            {
+                halfEdgeDebugValue.color = Color.red;
+                Gizmos.color = halfEdgeDebugValue.color;
+                MyGizmos.DrawWireCicle(halfEdgeDebugValue.value, 2, 30);
+            }
 
 
             GenerateObject<HalfEdgeVertex, TextMeshPro> generateObject = new GenerateObject<HalfEdgeVertex, TextMeshPro>(tmppropab, EventCallback);
@@ -141,8 +144,8 @@ namespace Monotone
             vertexListCompoennt.SetItems(vertices);
             if (!vertexListCompoennt.Update())
             {
-                // vertexListCompoennt.ResetComponent();
-                // vertexListCompoennt.SetComponent(generateObject);
+                vertexListCompoennt.ResetComponent();
+                vertexListCompoennt.SetComponent(generateObject);
             }
         }
 

@@ -162,6 +162,10 @@ namespace Monotone
             
             HalfEdge upperEdge = HalfEdgeUtility.GetEdgesHasSameFace(upper, face);
             HalfEdge lowerEdge = HalfEdgeUtility.GetEdgesHasSameFace(lower, face);
+
+            bool isSameCycle = HalfEdgeUtility.IsBoundaryCounterClockwise(upperEdge) ==
+                               HalfEdgeUtility.IsBoundaryCounterClockwise(lowerEdge);
+            Debug.Log(HalfEdgeUtility.IsBoundaryCounterClockwise(upperEdge) + " " + HalfEdgeUtility.IsBoundaryCounterClockwise(lowerEdge));
             if (lowerEdge == null || upperEdge == null)
             {
                 Debug.LogWarning(upper.Coordinate + " " + lower.Coordinate + " 엣지가 없습니다");
@@ -207,7 +211,8 @@ namespace Monotone
             // 이전에 저장한 Edge가 InnerComponent일 가능성이 있기 떄문에 데이터 보장을 위해 이렇게 해준다.
             leftEdge.incidentFace.OuterComponent = leftEdge;
 
-            HalfEdgeFace rightFace = new HalfEdgeFace { OuterComponent = rightEdge };
+            
+            HalfEdgeFace rightFace = isSameCycle ? new HalfEdgeFace { OuterComponent = rightEdge } : leftEdge.incidentFace;
             //Debug.Log("새로 만든 Face : <color=green>"+ rightFace.GetHashCode() +"</color>");
             HalfEdge current = rightEdge;
             int i = 0;
@@ -217,7 +222,11 @@ namespace Monotone
                 current.incidentFace = rightFace;
                 current = current.next;
             } while (current != rightEdge);
-            faces.Add(rightFace);
+            
+            
+            if(isSameCycle)
+                faces.Add(rightFace);
+                
             edges.Add(leftEdge);
             edges.Add(rightEdge);
         }

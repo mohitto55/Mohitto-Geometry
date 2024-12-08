@@ -85,6 +85,8 @@ namespace Monotone
             HalfEdge prev = IncidentEdge.prev;
             HalfEdge next = IncidentEdge.next;
             float ccw = MyMath.CCW(prev.vertex.Coordinate, Coordinate, next.vertex.Coordinate);
+            
+            
             if (ccw >= 1)
             {
                 return next;
@@ -101,13 +103,28 @@ namespace Monotone
             }
         }
         
-        public bool PolygonInteriorLiesToTheRight() {
+        // 폴리곤이 Vertex에 비해 오른쪽에 존재하는지 확인하는 함수
+        
+        public bool PolygonInteriorLiesToTheRight()
+        {
+            // 정점이 다각형의 "왼쪽"에 있는지, "오른쪽"에 있는지 빠르게 판단하려면, 이전 정점과 다음 정점의 인덱스를 비교합니다.
+            //     정점의 인덱스가 **오름차순(Ascending)**이면 특정 패턴이 나타나고, **내림차순(Descending)**이면 다른 패턴이 나타납니다.
+            //     부호에 따른 규칙:
+            // 반시계 방향 (Counter-Clockwise Polygon):
+            // 오름차순: 정규 정점이 다각형의 왼쪽에 있음.
+            //     내림차순: 정규 정점이 다각형의 오른쪽에 있음.
+            //     시계 방향 (Clockwise Polygon):
+            // 오름차순: 정규 정점이 다각형의 오른쪽에 있음.
+            //     내림차순: 정규 정점이 다각형의 왼쪽에 있음
+            HalfEdgeFace face = IncidentEdge.incidentFace;
+            List<Vector2> vector2s = HalfEdgeUtility.VerticesToVec(face.GetAdjacentVertices());
+            bool isCCW = MyMath.IsCounterClockwise(vector2s);
             
-            Vector2 pPrev = IncidentEdge.prev.vertex.Coordinate;
-            Vector2 pNext = IncidentEdge.next.vertex.Coordinate;
+            Vector2 pPrev = isCCW ? IncidentEdge.prev.vertex.Coordinate : IncidentEdge.next.vertex.Coordinate;
+            Vector2 pNext = isCCW ? IncidentEdge.next.vertex.Coordinate : IncidentEdge.prev.vertex.Coordinate;
             
-            if (pPrev.y > this.Coordinate.y &&
-                pNext.y < this.Coordinate.y) {
+            if (pPrev.y >= this.Coordinate.y &&
+                pNext.y <= this.Coordinate.y) {
                 return true;
             } else {
                 return false;
@@ -123,6 +140,11 @@ namespace Monotone
         public static bool operator !=(HalfEdgeVertex x, HalfEdgeVertex y)
         {
             return !(x == y);
+        }
+
+        public override string ToString()
+        {
+            return Coordinate.ToString();
         }
     }
 }

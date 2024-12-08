@@ -1,11 +1,34 @@
 using System.Collections.Generic;
 using System.Linq;
 using Monotone;
+using NUnit.Framework;
 using Unity.VisualScripting;
 using UnityEngine;
 
 public static class HalfEdgeUtility
 {
+    /// <summary>
+    /// 연결된 사이클 Edge들을 반환한다.
+    /// </summary>
+    /// <param name="edge"></param>
+    /// <returns></returns>
+    public static List<HalfEdge> GetBoundaryEdges(HalfEdge edge)
+    {
+        if (edge == null) return null;
+        List<HalfEdge> BoundaryEdges = new List<HalfEdge>();
+        HalfEdge startEdge = edge;
+        HalfEdge searchEdge = edge;
+
+        do
+        {
+            if(searchEdge == null) return null;
+            BoundaryEdges.Add(searchEdge);
+            searchEdge = searchEdge.next;
+        }
+        while (startEdge != searchEdge);
+
+        return BoundaryEdges;
+    }
     /// <summary>
     /// 하나의 버텍스에 여러개의 Edge가 연결되어 있을때 원하는 Face에 속한 Edge를 구하는 방법은 Incident Edge와 인접한 Edge를 순회하면된다.
     /// Incident Edge의 Face가 원하는 Face가 아니라면 Edge.twin.prev는 같은 vertex를 가리키고있는 또다른 Edge를 찾아갈 수 있다.
@@ -207,8 +230,14 @@ public static class HalfEdgeUtility
         }).ToList();
     }
 
+    public static bool IsBoundaryCounterClockwise(HalfEdge edge)
+    {
+        List<Vector2> vector2s = EdgesToVec(GetBoundaryEdges(edge));
+        return MyMath.IsCounterClockwise(vector2s);
+    }
+
     /// <summary>
-    /// face를 참조하는 edge들이 CCW 방향으로 연결되어 있느지 확인한다.
+    /// face를 참조하는 edge들이 CCW 방향으로 연결되어 있는지 확인한다.
     /// </summary>
     /// <param name="face"></param>
     /// <returns></returns>
@@ -225,19 +254,32 @@ public static class HalfEdgeUtility
         {
             vector2s.Add(vertices[i].Coordinate);
         }
-
         return vector2s;
     }
-
+    public static List<Vector2> EdgesToVec(List<HalfEdge> edges)
+    {
+        List<Vector2> vector2s = new List<Vector2>();
+        for (int i = 0; i < edges.Count; i++)
+        {
+            vector2s.Add(edges[i].vertex.Coordinate);
+        }
+        return vector2s;
+    }
     public static List<HalfEdge> DetermineVertexType(HalfEdgeFace face)
     {
-        List<HalfEdge> ConnectedEdges = face.GetInnerEdges();
+        List<HalfEdge> ConnectedEdges = face.GetOuterEdges();
         // 완성된 버텍스들을 순회하며 타입을 정한다.
         for (int i = 0; i < ConnectedEdges.Count; i++)
         {
             int indexPrev = (i - 1 + ConnectedEdges.Count) % ConnectedEdges.Count;
             int indexNext = (i + 1) % ConnectedEdges.Count;
-            DetermineType(ConnectedEdges[indexPrev].vertex, ConnectedEdges[i].vertex, ConnectedEdges[indexNext].vertex);
+            HalfEdge centerEdge = ConnectedEdges[i];
+            bool isOuter = true;
+            if (centerEdge.incidentFace != null && centerEdge.twin.incidentFace != null)
+            {
+                isOuter = false;
+            } 
+            DetermineType(ConnectedEdges[indexPrev].vertex, ConnectedEdges[i].vertex, ConnectedEdges[indexNext].vertex, isOuter);
         }
         return ConnectedEdges;
     }
@@ -284,15 +326,16 @@ public static class HalfEdgeUtility
             }
             searchEdge = searchEdge.next;
         }
-        while (startEdge != edge);
+        while (startEdge != searchEdge);
 
         return leftEdge;
     }
-    public static void DetermineType(HalfEdgeVertex prev, HalfEdgeVertex cur, HalfEdgeVertex next)
+    public static void DetermineType(HalfEdgeVertex prev, HalfEdgeVertex cur, HalfEdgeVertex next, bool outer = true)
     {
         Vector2 v1 = prev.Coordinate - cur.Coordinate;
         Vector2 v2 = next.Coordinate - cur.Coordinate;
-        float angle = MyMath.SignedAngle(v1, v2);
+        // 폴리곤 내부에 있다면 반대로 수행시킨다.
+        float angle =  outer ? MyMath.SignedAngle(v1, v2) : -MyMath.SignedAngle(v1, v2);
 
         Vector2 prevP = prev.Coordinate;
         Vector2 curP = cur.Coordinate;

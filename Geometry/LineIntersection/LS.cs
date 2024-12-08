@@ -129,8 +129,12 @@ namespace Swewep_Line_Algorithm
 
                 // 스윕라인의 교차점을 구하는 문제
         // Plane안에 있는 Segment들을 넣는다.
-        public static List<Point> SweepIntersections(HalfEdgeData polygon, List<Segment> segments, Action<List<Segment>, Point> intersctionCallback = null)
+        public static List<Point> SweepIntersections(HalfEdgeData polygon, List<Segment> segments, out Dictionary<Point, Segment> slTable, Action<List<Segment>, Point> intersctionCallback = null)
         {
+            // 맵 오버레이에서 사용 내부, 외부 판별시 사용한다.
+            // 이벤트 포인트의 가장 왼쪽에 있는 DCEL을 저장한다.
+            // slTable
+            slTable = new Dictionary<Point, Segment>();
             List<Point> intersect = new List<Point>();
 // 이벤트Q
             // 이벤트 큐로해도 상관은 없지만 중복된 Event Point를 안넣으려면 BST로 해야한다.
@@ -139,11 +143,7 @@ namespace Swewep_Line_Algorithm
             // 초기화 방법은 이렇다
             // 세그먼트의 endpoint를 Q에 삽입하되, 상단 끝점이 삽입될 때는 해당 세그먼트가 함께 저장되어야한다.
             SortedDictionary<Point, EventPoint> Q = new SortedDictionary<Point, EventPoint>(new PointComparer());
-            Dictionary<>
-            foreach (var face in polygon.faces)
-            {
-                face.OuterComponent
-            }
+            
             
             foreach (var segment in segments)
             {
@@ -236,6 +236,14 @@ namespace Swewep_Line_Algorithm
                     Segment sl = NearestLeft(p, T);
                     Segment sr = NearestRight(p, T);
                     Point i = FindNewEvent(sl, sr, p, ref Q);
+
+                    if (sl != null)
+                    {
+                        if (!slTable.ContainsKey(p))
+                        {
+                            slTable.Add(p, sl);
+                        }
+                    }
                 }
                 else
                 {
@@ -261,6 +269,14 @@ namespace Swewep_Line_Algorithm
                     
                     Point i = FindNewEvent(SP, sl, p, ref Q);
                     Point j = FindNewEvent(SPP, sr, p, ref Q);
+                    
+                    if (sl != null)
+                    {
+                        if (!slTable.ContainsKey(p))
+                        {
+                            slTable.Add(p, sl);
+                        }
+                    }
                 }
             }
             return intersect;

@@ -94,7 +94,6 @@ public class ListBehaviour<T>
 
         while (items.Count > components.Count)
         {
-            Debug.Log("SDSD");
             // 이건 하위 객체로 안됀다.
             // ListComponent<T> copy = new ListComponent<T>(comp);
             // components.Add(copy);

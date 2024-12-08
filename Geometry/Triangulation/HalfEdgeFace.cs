@@ -6,6 +6,7 @@ namespace Monotone
     public class HalfEdgeFace
     {
         public HalfEdge OuterComponent;
+        public HalfEdge InnerComponent => OuterComponent.twin;
         public HalfEdgeFace()
         {
             this.OuterComponent = null;
@@ -15,7 +16,7 @@ namespace Monotone
             this.OuterComponent = outerComponent;
         }
 
-        public List<HalfEdge> GetInnerEdges()
+        public List<HalfEdge> GetOuterEdges()
         {
             List<HalfEdge> edges = new List<HalfEdge>();
             HalfEdge curEdge = OuterComponent;
@@ -31,7 +32,7 @@ namespace Monotone
             }
             return edges;
         }
-        public List<HalfEdge> GetOuterEdges()
+        public List<HalfEdge> GetInnerEdges()
         {
             List<HalfEdge> edges = new List<HalfEdge>();
             HalfEdge curEdge = OuterComponent.twin;
