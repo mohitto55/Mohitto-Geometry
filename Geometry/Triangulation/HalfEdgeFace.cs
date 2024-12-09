@@ -51,19 +51,8 @@ namespace Monotone
         
         public List<HalfEdgeVertex> GetAdjacentVertices()
         {
-            List<HalfEdgeVertex> vertices = new List<HalfEdgeVertex>();
             HalfEdge curEdge = OuterComponent;
-            if (curEdge != null)
-            {
-                vertices.Add(curEdge.vertex);
-                curEdge = curEdge.next;
-                while (curEdge != null && curEdge != OuterComponent)
-                {
-                    vertices.Add(curEdge.vertex);
-                    curEdge = curEdge.next;
-                }
-            }
-            return vertices;
+            return HalfEdgeUtility.GetBoundaryVertices(curEdge);
         }
 
         // public HalfEdge GetEdgeIncludeVertex(HalfEdgeVertex vertex)

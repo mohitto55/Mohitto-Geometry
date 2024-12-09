@@ -40,11 +40,7 @@ public class ListBehaviour<T>
     public void SetComponent(ListComponent<T> changeComponent)
     {
         this.comp = changeComponent;
-
-        for (int i = 0; i < components.Count; i++)
-            components[i].DestroyComponent();
-        
-        components = new List<ListComponent<T>>();
+        //ResetComponent();
     }
 
     public void ResetComponent()
@@ -91,6 +87,10 @@ public class ListBehaviour<T>
         {
             components = new List<ListComponent<T>>();
         }
+        
+        if(items.Count > components.Count)
+            for (int i = 0; i < components.Count; i++)
+                components[i].DestroyComponent();
 
         while (items.Count > components.Count)
         {
@@ -144,7 +144,6 @@ public class GenerateObject<T, TObj> : ListComponent<T> where TObj : Object
 {
     [SerializeReference] public TObj prefab;
     [SerializeReference] private TObj spawnedObject;
-    [SerializeReference] private Action<TObj> tmproUpdate;
     [SerializeReference] public Action<GenerateObject<T, TObj>, T, TObj> OnUpdate;
 
     public GenerateObject(TObj objPrefab, Action<GenerateObject<T, TObj>, T, TObj> onUpdate = null)
@@ -161,9 +160,9 @@ public class GenerateObject<T, TObj> : ListComponent<T> where TObj : Object
 
     ~GenerateObject()
     {
-        if (spawnedObject && spawnedObject.GameObject())
+        if (spawnedObject)
         {
-            GameObject.DestroyImmediate(spawnedObject.GameObject());
+            GameObject.DestroyImmediate(spawnedObject);
         }
     }
 
@@ -176,11 +175,23 @@ public class GenerateObject<T, TObj> : ListComponent<T> where TObj : Object
     public override bool Update(T obj)
     {
         if (!prefab)
+        {
+            if (spawnedObject)
+            {
+                GameObject.DestroyImmediate(spawnedObject);
+            }
             return false;
-        
+        }
+
         if (OnUpdate == null)
+        {
+            if (spawnedObject)
+            {
+                GameObject.DestroyImmediate(spawnedObject);
+            }
             return false;
-        
+        }
+
         if (spawnedObject == null)
         {
             spawnedObject = GameObject.Instantiate(prefab);
@@ -188,7 +199,8 @@ public class GenerateObject<T, TObj> : ListComponent<T> where TObj : Object
         
         try
         {
-            OnUpdate.Invoke(this, obj, spawnedObject);
+            if(OnUpdate != null)
+                OnUpdate.Invoke(this, obj, spawnedObject);
         }
         catch (Exception e)
         {
@@ -201,7 +213,7 @@ public class GenerateObject<T, TObj> : ListComponent<T> where TObj : Object
 
     public override void DestroyComponent()
     {
-        if (spawnedObject && spawnedObject.GameObject())
+        if (spawnedObject)
         {
             GameObject.DestroyImmediate(spawnedObject.GameObject());
         }
@@ -218,11 +230,10 @@ public class GenerateObject<T, TObj> : ListComponent<T> where TObj : Object
         //  UnityEngine.Object에서 파생되지 않은 커스텀 클래스의 경우 Unity는 커스텀 클래스를 참조하는 MonoBehaviour 또는 ScriptableObject의 직렬화된 데이터에 인스턴스 상태를 직접 포함합니다.
         // 이 작업은 인라인과 [SerializeReference]로 하는 두 가지 방식이 있습니다.
         GenerateObject<T, TObj> copy = (GenerateObject<T, TObj>)Activator.CreateInstance(this.GetType(), this);
-        copy.Generate(responseItem);
         copy.spawnedObject = null;
         copy.OnUpdate = OnUpdate;
-        copy.tmproUpdate = tmproUpdate;
         copy.prefab = prefab;
+        copy.Generate(responseItem);
         return copy;
     }
 }

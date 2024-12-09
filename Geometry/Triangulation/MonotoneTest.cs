@@ -25,12 +25,19 @@ namespace Monotone
         [SerializeField] public List<TransformGroup> vertexs = new List<TransformGroup>();
         //public List<PolygonLine> _lines = new List<PolygonLine>();
         
-        [SerializeReference]
-        private ListBehaviour<HalfEdgeVertex> vertexListCompoennt;
+
         public TextMeshPro tmppropab;
         private HalfEdgeData EdgeData;
         private List<Monotone.HalfEdgeDebugValue> _halfEdgeDebugValue = new List<Monotone.HalfEdgeDebugValue>();
-
+        
+        private List<HalfEdgeVertex> vertices = new List<HalfEdgeVertex>();
+        
+        [SerializeReference]
+        private ListBehaviour<HalfEdgeVertex> vertexListCompoennt;
+        Action<GenerateObject<HalfEdgeVertex, TextMeshPro>, HalfEdgeVertex, TextMeshPro> onUpdate;
+        private GenerateObject<HalfEdgeVertex, TextMeshPro> generateObject;
+        
+        
         [ReadOnly, ShowInInspector]
         private int VertexCount
         {
@@ -85,7 +92,7 @@ namespace Monotone
             if (EdgeData == null)
                 return;
             
-            List<HalfEdgeVertex> vertices = EdgeData.vertices;
+            vertices = EdgeData.vertices;
             List<HalfEdge> edges = new List<HalfEdge>();
             edges = EdgeData.edges;
 
@@ -128,13 +135,14 @@ namespace Monotone
 
             foreach (var halfEdgeDebugValue in _halfEdgeDebugValue)
             {
-                halfEdgeDebugValue.color = Color.red;
+                if(halfEdgeDebugValue.color == Color.white)
+                    halfEdgeDebugValue.color = Color.red;
                 Gizmos.color = halfEdgeDebugValue.color;
                 MyGizmos.DrawWireCicle(halfEdgeDebugValue.value, 2, 30);
             }
-
-
-            GenerateObject<HalfEdgeVertex, TextMeshPro> generateObject = new GenerateObject<HalfEdgeVertex, TextMeshPro>(tmppropab, EventCallback);
+            
+            onUpdate = EventCallback;
+            generateObject = new GenerateObject<HalfEdgeVertex, TextMeshPro>(tmppropab, onUpdate);
             
             if (vertexListCompoennt == null)
             {

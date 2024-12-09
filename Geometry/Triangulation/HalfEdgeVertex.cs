@@ -66,15 +66,11 @@ namespace Monotone
         {
             HalfEdge prev = IncidentEdge.prev;
             HalfEdge next = IncidentEdge.next;
-            float ccw = MyMath.CCW(prev.vertex.Coordinate, Coordinate, next.vertex.Coordinate);
-            if (ccw == -1)
-            {
-                return IncidentEdge;
-            }
-            else
-            {
-                return next;
-            }
+
+            Vector2 prevDir = (prev.vertex.Coordinate - IncidentEdge.vertex.Coordinate).normalized;
+            Vector2 nextDir = (next.vertex.Coordinate - IncidentEdge.vertex.Coordinate).normalized;
+
+            return prevDir.x < nextDir.x ? IncidentEdge : next;
         }
         /// <summary>
         /// Right가 필요한 Edge들은 SPLIT, MERGE 두개다
@@ -84,23 +80,11 @@ namespace Monotone
         {
             HalfEdge prev = IncidentEdge.prev;
             HalfEdge next = IncidentEdge.next;
-            float ccw = MyMath.CCW(prev.vertex.Coordinate, Coordinate, next.vertex.Coordinate);
-            
-            
-            if (ccw >= 1)
-            {
-                return next;
-            }
-            else
-            {
-                return IncidentEdge;
-            }
-            if (prev.vertex.Coordinate.x < next.vertex.Coordinate.x)
-                return next;
-            else
-            {
-                return IncidentEdge;
-            }
+
+            Vector2 prevDir = (prev.vertex.Coordinate - IncidentEdge.vertex.Coordinate).normalized;
+            Vector2 nextDir = (next.vertex.Coordinate - IncidentEdge.vertex.Coordinate).normalized;
+
+            return prevDir.x > nextDir.x ? IncidentEdge : next;
         }
         
         // 폴리곤이 Vertex에 비해 오른쪽에 존재하는지 확인하는 함수

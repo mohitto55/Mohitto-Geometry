@@ -132,6 +132,8 @@ namespace Monotone
                 lower = temp;
             }
 
+            /// -WARNING-
+            /// inner, outer가 똑같다면 문제가 발생할 수 있다.
             HalfEdge[] edgesHasSameFace = HalfEdgeUtility.GetEdgesHasSameFace(lower, upper);
             if (edgesHasSameFace == null)
             {
@@ -148,7 +150,7 @@ namespace Monotone
         
         // 대각선추가
         // 시계 방향, 반시계 방향으로 이어졋는지 상관없이 vertex끼리 선을 잇는다.
-        private void AddDiagonal(HalfEdgeVertex lower, HalfEdgeVertex upper, HalfEdgeFace face)
+        public void AddDiagonal(HalfEdgeVertex lower, HalfEdgeVertex upper, HalfEdgeFace face)
         {
             if (lower == null || upper == null)
                 return;
@@ -162,7 +164,7 @@ namespace Monotone
             
             HalfEdge upperEdge = HalfEdgeUtility.GetEdgesHasSameFace(upper, face);
             HalfEdge lowerEdge = HalfEdgeUtility.GetEdgesHasSameFace(lower, face);
-
+            
             bool isSameCycle = HalfEdgeUtility.IsBoundaryCounterClockwise(upperEdge) ==
                                HalfEdgeUtility.IsBoundaryCounterClockwise(lowerEdge);
             Debug.Log(HalfEdgeUtility.IsBoundaryCounterClockwise(upperEdge) + " " + HalfEdgeUtility.IsBoundaryCounterClockwise(lowerEdge));
@@ -178,6 +180,10 @@ namespace Monotone
                 upperEdge = lowerEdge;
                 lowerEdge = temp;
             }
+            Debug.LogWarning("엣지 추가before " + lowerEdge.incidentFace.GetHashCode() + " " + upperEdge.incidentFace.GetHashCode());
+
+            Debug.LogWarning("엣지 추가before " + lowerEdge + " " + upperEdge);
+
             
             // 왼쪽 원점을 아래쪽 오른쪽을 위로해서 각각 자체를 쌍둥이로 표현할 수 있다.
             // 대각선으로 할 새로운 edge를 만든다
@@ -229,6 +235,9 @@ namespace Monotone
                 
             edges.Add(leftEdge);
             edges.Add(rightEdge);
+            
+            Debug.LogWarning("엣지 추가1 / " + leftEdge.prev + " / " +leftEdge + " / " + leftEdge.next);
+            Debug.LogWarning("엣지 추가2 / " + rightEdge.prev + " / " +rightEdge + " / " + rightEdge.next);
         }
     }
 }

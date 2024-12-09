@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Monotone;
 using NUnit.Framework;
+using Swewep_Line_Algorithm;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -28,6 +29,24 @@ public static class HalfEdgeUtility
         while (startEdge != searchEdge);
 
         return BoundaryEdges;
+    }
+    
+    public static List<HalfEdgeVertex> GetBoundaryVertices(HalfEdge edge)
+    {
+        if (edge == null) return null;
+        List<HalfEdgeVertex> BoundaryVertex = new List<HalfEdgeVertex>();
+        HalfEdge startEdge = edge;
+        HalfEdge searchEdge = edge;
+
+        do
+        {
+            if(searchEdge == null) return null;
+            BoundaryVertex.Add(searchEdge.vertex);
+            searchEdge = searchEdge.next;
+        }
+        while (startEdge != searchEdge);
+
+        return BoundaryVertex;
     }
     /// <summary>
     /// 하나의 버텍스에 여러개의 Edge가 연결되어 있을때 원하는 Face에 속한 Edge를 구하는 방법은 Incident Edge와 인접한 Edge를 순회하면된다.
@@ -83,7 +102,13 @@ public static class HalfEdgeUtility
 
         return null;
     }
-    
+
+
+    // public static Segment GetSegment(HalfEdgeVertex vertex1, HalfEdgeVertex vertex2)
+    // {
+    //     
+    // }
+
     /// <summary>
     /// 두 vertex를 가리키는 Edge들 중 같은 face를 가지는 Edge 두개를 반환한다.
     /// </summary>
@@ -259,6 +284,8 @@ public static class HalfEdgeUtility
     public static List<Vector2> EdgesToVec(List<HalfEdge> edges)
     {
         List<Vector2> vector2s = new List<Vector2>();
+        if (edges == null)
+            return vector2s;
         for (int i = 0; i < edges.Count; i++)
         {
             vector2s.Add(edges[i].vertex.Coordinate);
@@ -286,7 +313,8 @@ public static class HalfEdgeUtility
     
     /// <summary>
     /// 사이클이 Innder인지 Outer인지 판별한다.
-    /// 맨 왼쪽 정점의 각도가 180보다 작으면 Outer, 180보다 그면 Inner다.
+    /// 외부 순환(outer cycle)인 경우: 양수(> 0)
+    /// 내부 순환(inner cycle)인 경우: 음수(< 0)
     /// </summary>
     /// <param name="edge"></param>
     /// <returns></returns>
@@ -297,12 +325,10 @@ public static class HalfEdgeUtility
         HalfEdge leftEdge = FindLeftmostEdgeInCycle(edge);
 
         if (leftEdge == null) return 0;
-        
-        float e1x = leftEdge.vertex.Coordinate.x;
-        float e1y = leftEdge.vertex.Coordinate.y;
-        float e2x = leftEdge.next.vertex.Coordinate.y;
-        float e2y = leftEdge.next.vertex.Coordinate.y;
-        return (e1x * e2y) - (e1y * e2x);
+
+        Vector2 e1 =  edge.vertex.Coordinate - edge.prev.vertex.Coordinate;
+        Vector2 e2 =  edge.next.vertex.Coordinate - edge.vertex.Coordinate;
+        return (e1.x * e2.y) - (e1.y * e2.x);
     }
 
     /// <summary>
@@ -390,6 +416,18 @@ public static class HalfEdgeUtility
         else
         {
             cur.type = HalfEdgeVertex.Vtype.REGULAR;
+        }
+
+        if (!outer)
+        {
+            if (cur.type == HalfEdgeVertex.Vtype.START)
+            {
+                cur.type = HalfEdgeVertex.Vtype.SPLIT;
+            }
+            else if (cur.type == HalfEdgeVertex.Vtype.END)
+            {
+                cur.type = HalfEdgeVertex.Vtype.MERGE;
+            }
         }
     }
 }

@@ -6,7 +6,7 @@ using UnityEngine;
 
 public static class HalfEdgeDebug
 {
-    public static IEnumerator CheckEdgeCycle(HalfEdgeData data, HalfEdgeFace face, Monotone.Monotone.HalfEdgeDebugValue point, float delay = 1)
+    public static IEnumerator CheckEdgeCycle(HalfEdgeData data, HalfEdgeFace face, List<Monotone.Monotone.HalfEdgeDebugValue> point, float delay = 1)
     {
         Debug.Log("여행 시작" );
 
@@ -17,7 +17,8 @@ public static class HalfEdgeDebug
         Debug.Log("반대 확인 시작");
         do
         {
-            point.value = searchEdge.vertex.Coordinate;
+            point.Clear();
+            point.Add(new Monotone.Monotone.HalfEdgeDebugValue(searchEdge.vertex.Coordinate));
             searchEdge = searchEdge.next;
             safe++;
             if (safe > 100000000000)
@@ -35,12 +36,13 @@ public static class HalfEdgeDebug
         } while (searchEdge != face.OuterComponent.twin);
         Debug.Log("반대편 갯수 " + safe);
     }
-    public static IEnumerator TravelFaceVertex(HalfEdgeData data, HalfEdgeFace face, Monotone.Monotone.HalfEdgeDebugValue point, float delay = 1)
+    public static IEnumerator TravelFaceVertex(HalfEdgeData data, HalfEdgeFace face, List<Monotone.Monotone.HalfEdgeDebugValue> point, float delay = 1)
     {
         List<HalfEdge> edges = face.GetOuterEdges();
         for (int i = 0; i < edges.Count; i++)
         {
-            point.value = edges[i].vertex.Coordinate;
+            point.Clear();
+            point.Add(new Monotone.Monotone.HalfEdgeDebugValue(edges[i].vertex.Coordinate, Color.green));
             Debug.Log("<color=green>"+ edges[i].vertex.Coordinate + " "+ edges[i].next.vertex.Coordinate +  " " + edges[i].twin.vertex.Coordinate +"</color>");
             Debug.Log("<color=green>"+ edges[i].incidentFace.GetHashCode() +"</color>");
 

@@ -31,7 +31,6 @@ public class DisjointSet<T>{
     /// <param name="n"></param>
     /// <returns></returns>
     public int FindParent(int n){
-        Debug.Log(n + " " + parent.Count);
         if(parent[n] == n) return n;
         return parent[n] = FindParent(parent[n]);
     }

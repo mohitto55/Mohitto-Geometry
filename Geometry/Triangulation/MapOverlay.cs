@@ -28,8 +28,8 @@ public static class MapOverlay
                 HalfEdge halfEdge = edges[j];
                 halfedgeDic.Add(id, halfEdge);
                 Segment segment = new Segment(halfEdge.vertex.Coordinate, halfEdge.prev.vertex.Coordinate, id);
-                id++;
                 segments.Add(segment);
+                id++;
             }
         }
         //Debug.Log("총 세그먼트 카운트" + segments.Count);
@@ -61,12 +61,6 @@ public static class MapOverlay
             Debug.Log(VARIABLE.Key.ToVector() + " SEGMENT : " + VARIABLE.Value.Start.ToVector() + " " + VARIABLE.Value.End.ToVector() );
         }
         
-        foreach (var VARIABLE in halfedgeDic)
-        {
-            Debug.Log(VARIABLE.Key.ToString() + "ㅊ자기" );
-        }
-
-
 
         // D를 탐색하여 O(S1, S2)의 경계 사이클을 결정한다.
         // 각 경계 사이클에 대해 노드가 생성되는 그래프 G를 생성한다. 
@@ -104,75 +98,98 @@ public static class MapOverlay
                 }
             }
         }
+        //  각 hole 사이클을 가장 왼쪽 정점의 왼쪽에 있는 사이클(Inner Component)과 연결하고,
+        //  이들의 연결된 컴포넌트를 계산한다.  
+        //  (2번 단계의 두 번째 항목에서 G의 arc를 결정하는 정보가 계산되었다.)
         for (int i = 0; i < D.faces.Count; i++)
         {
             HalfEdge innerComponent = D.faces[i].InnerComponent;
 
-            HalfEdge leftEdge = HalfEdgeUtility.FindLeftmostEdgeInCycle(innerComponent);
-            Debug.Log("가장 왼쪽 Inner 정점" + leftEdge);
+            // 구멍에서 가장 왼쪽은 엣지
+            HalfEdge holeLeftEdge = HalfEdgeUtility.FindLeftmostEdgeInCycle(innerComponent);
+            Debug.Log(i + " 가장 왼쪽 Inner 정점" + holeLeftEdge);
 
 
             // p의 가장 왼쪽 세그먼트를 찾는다.
-            var sameVertex = slTable.Where(t =>
+            var leftVertexEnumerable = slTable.Where(t =>
             {
-                return MathUtility.FloatZero(t.Key.x - leftEdge.vertex.Coordinate.x) &&
-                       MathUtility.FloatZero(t.Key.y - leftEdge.vertex.Coordinate.y);
+                return MathUtility.FloatZero(t.Key.x - holeLeftEdge.vertex.Coordinate.x) &&
+                       MathUtility.FloatZero(t.Key.y - holeLeftEdge.vertex.Coordinate.y);
             });
             
             
-            if (sameVertex.Count() > 0 && sameVertex.First().Key != null)
+            if (leftVertexEnumerable.Count() > 0 && leftVertexEnumerable.First().Key != null)
             {
-                Point point = sameVertex.First().Key;
-                Segment segment = sameVertex.First().Value;
+                Point point = leftVertexEnumerable.First().Key;
+                Segment segment = leftVertexEnumerable.First().Value;
+                // sl테이블(정점의 가장 가까운 왼쪽 edge)의 segment에 해당하는 edge를 가져온다.
                 if (halfedgeDic.ContainsKey(segment.num))
                 {
-                    HalfEdge edge = halfedgeDic[segment.num];
+                    HalfEdge nearLeftEdge = halfedgeDic[segment.num];
                     
-                    Debug.Log(leftEdge.vertex.Coordinate + " 의 왼쪽 세그먼트 : " + sameVertex.First().Value);
-                    Debug.Log(leftEdge.vertex.Coordinate + " 의 왼쪽 엣지 : " + edge);
-                    Debug.Log("각도 " + HalfEdgeUtility.CheckInnerCycle(edge));
-                    float isInner = HalfEdgeUtility.CheckInnerCycle(edge);
+                    Debug.Log(holeLeftEdge.vertex.Coordinate + " 의 왼쪽 세그먼트 : " + leftVertexEnumerable.First().Value);
+                    Debug.Log(holeLeftEdge.vertex.Coordinate + " 의 왼쪽 엣지 : " + nearLeftEdge);
+                    Debug.Log("각도 " + HalfEdgeUtility.CheckInnerCycle(nearLeftEdge));
+                    float isInner = HalfEdgeUtility.CheckInnerCycle(nearLeftEdge);
                     
-                    // 음수면 Inner
-                    if (isInner <= 0)
+                    // 양수면 outer 음수면 inner
+                    // 무조건 inner로 만들기
+                    if (isInner > 0)
                     {
-                        if (boundaryTable.ContainsKey(edge) && boundaryTable.ContainsKey(leftEdge))
+                        nearLeftEdge = nearLeftEdge.twin;
+                    }
+
+                    if (boundaryTable.ContainsKey(nearLeftEdge) && boundaryTable.ContainsKey(holeLeftEdge))
+                    {
+                        int rightID = boundaryTable[holeLeftEdge];
+                        int leftID = boundaryTable[nearLeftEdge];
+
+                        if (leftID == 0)
                         {
-                            int rightID = boundaryTable[edge];
-                            int leftID = boundaryTable[leftEdge];
-                            Debug.Log("Left ID " + leftID + " / Right ID : " + rightID);
-                            graphG.Merge(leftID, rightID);
-                            Debug.Log(graphG);
+                            Debug.Log("반대로");
+                            nearLeftEdge = nearLeftEdge.twin;
+                            leftID = boundaryTable[nearLeftEdge];
                         }
-                        else
+                        Debug.Log("Left ID " + leftID + " / Right ID : " + rightID);
+                        graphG.Merge(leftID, rightID);
+                        Debug.Log(graphG);
+                    }
+                    else
+                    {
+                        // 왼쪽 edge가 없다면 무한대 노드로 합친다.
+                        int leftID = boundaryTable[holeLeftEdge];
+                        graphG.Merge(leftID, 0);
+                        if (!boundaryTable.ContainsKey(nearLeftEdge))
                         {
-                            if (!boundaryTable.ContainsKey(edge))
-                            {
-                                Debug.Log("라이트 없음");
-                            }
-                            if (!boundaryTable.ContainsKey(leftEdge))
-                            {
-                                Debug.Log("래프트 없음");
-                            }
+                            Debug.Log("라이트 없음");
+                        }
+                        if (!boundaryTable.ContainsKey(holeLeftEdge))
+                        {
+                            Debug.Log("래프트 없음");
                         }
                     }
+                    
                 }
 
             }
         }
         /// 6. for : each connected Component in G
+        Debug.Log(graphG);
         IEnumerable<List<HalfEdge>> connectedComponentNodes = graphG.GetConnectedItems();
+        int k = 0;
         foreach (var connectedComponents in connectedComponentNodes)
         {
             // C를 해당 구성요소의 유일한 외부 경계 순환이라 하고
             HalfEdge C = null;
+            Debug.LogWarning( k + "번쨰 시작");
+            k++;
             foreach (HalfEdge component in connectedComponents)
             {
                 float isOuter = HalfEdgeUtility.CheckInnerCycle(component);
-                if (isOuter <= 0)
+                if (isOuter >= 0)
                 {
                     C = component;
-                    Debug.LogWarning("Outer 컴포넌트 발견");
+                    Debug.LogWarning("Outer 컴포넌트 발견" + connectedComponents.Count);
                     break;
                 }
             }
