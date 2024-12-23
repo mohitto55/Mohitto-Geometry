@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
-using Sirenix.OdinInspector;
-using Sirenix.Serialization;
 using TMPro;
 using Unity.VisualScripting;
+using UnityEditor;
 using UnityEngine;
 
 namespace Monotone
@@ -25,7 +24,6 @@ namespace Monotone
         [SerializeField] public List<TransformGroup> vertexs = new List<TransformGroup>();
         //public List<PolygonLine> _lines = new List<PolygonLine>();
         
-
         public TextMeshPro tmppropab;
         private HalfEdgeData EdgeData;
         private List<Monotone.HalfEdgeDebugValue> _halfEdgeDebugValue = new List<Monotone.HalfEdgeDebugValue>();
@@ -37,9 +35,8 @@ namespace Monotone
         Action<GenerateObject<HalfEdgeVertex, TextMeshPro>, HalfEdgeVertex, TextMeshPro> onUpdate;
         private GenerateObject<HalfEdgeVertex, TextMeshPro> generateObject;
         
-        
-        [ReadOnly, ShowInInspector]
-        private int VertexCount
+        [ShowInInspector]
+        public int VertexCount
         {
             get
             {
@@ -48,8 +45,9 @@ namespace Monotone
                 return EdgeData.vertices.Count;
             }
         }
-        [ReadOnly, ShowInInspector]
-        private int EdgeCount
+        
+        [ShowInInspector]
+        public int EdgeCount
         {
             get
             {
@@ -58,8 +56,8 @@ namespace Monotone
                 return EdgeData.edges.Count;
             }
         }
-        [ReadOnly, ShowInInspector]
-        private int FaceCount
+        [ShowInInspector]
+        public int FaceCount
         {
             get
             {

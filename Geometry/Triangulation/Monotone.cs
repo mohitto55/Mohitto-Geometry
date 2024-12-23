@@ -2,7 +2,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Monotone;
-using Sirenix.Utilities;
 using UnityEditor.Build;
 using UnityEngine;
 
@@ -12,7 +11,7 @@ namespace Monotone
     {
         public static IEnumerator MonotoneTriangulation(HalfEdgeData polygon, List<HalfEdgeDebugValue> debugHalfEdgeDebug)
         {
-             MapOverlay.MonotoneOverlay(polygon);
+            MapOverlay.MonotoneOverlay(polygon);
             
             yield return MakeMonotone(polygon, debugHalfEdgeDebug, 0.5f);
             HalfEdgeData monotone = polygon;
@@ -376,8 +375,12 @@ namespace Monotone
             else if (vertex.type == HalfEdgeVertex.Vtype.REGULAR)
             {
                 bool Inner = vertex.IncidentEdge.incidentFace != null && vertex.IncidentEdge.twin.incidentFace != null;
-                bool isRight = vertex.PolygonInteriorLiesToTheRight();
-                isRight = Inner ? !isRight : isRight;
+
+                HalfEdgeFace face = vertex.IncidentEdge.incidentFace.OuterComponent.incidentFace != null
+                    ? vertex.IncidentEdge.incidentFace.OuterComponent.incidentFace
+                    : vertex.IncidentEdge.incidentFace;
+                bool isRight = vertex.PolygonInteriorLiesToTheRight(face);
+                isRight = Inner ? isRight : isRight;
                 if (isRight)
                 {
                     HalfEdge prevEdge = vertex.IncidentEdge.prev;

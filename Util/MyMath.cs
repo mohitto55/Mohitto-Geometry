@@ -43,6 +43,16 @@ public static class MyMath
         if (a < b) return -1;
         return 0;
     }
+    
+    /// <summary>
+    /// 1 == 반시계
+    /// 0 == 일직선
+    /// -1 == 시계
+    /// </summary>
+    /// <param name="p1"></param>
+    /// <param name="p2"></param>
+    /// <param name="p3"></param>
+    /// <returns></returns>
     public static float CCW(Vector2 p1, Vector2 p2, Vector2 p3)
     {
         float ret = Cross2D(p2 - p1, p3 - p2);
@@ -51,6 +61,19 @@ public static class MyMath
         else return -1; //시계 방향
     }
     
+    /// <summary>
+    /// ccw > 0 반시계 방향
+    /// ccw == 0 직선
+    /// ccw < 0 시계방향
+    /// </summary>
+    /// <param name="p1"></param>
+    /// <param name="p2"></param>
+    /// <param name="p3"></param>
+    /// <returns></returns>
+    public static float CCWValue(Vector2 p1, Vector2 p2, Vector2 p3)
+    {
+        return Cross2D(p2 - p1, p3 - p2);
+    }
     public static bool LineIntersection(Vector2 a, Vector2 b, Vector2 c, Vector2 d, ref Vector2 x)  
     {  
         // 분모  

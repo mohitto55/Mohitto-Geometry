@@ -119,6 +119,13 @@ namespace Monotone
         }
 
         // 대각선추가
+        // 정점 v 주변의 처리: v 주변의 반에지들의 순환 순서를 결정하기 위해 e'과 e"의 위치를 테스트합니다
+        // 네 개의 반에지 쌍이 생기며, v에서 시계방향으로 연결됩니다
+        // e'에 대한 반에지는 시계 반대 방향의 첫 번째 반에지와 연결되어야 합니다
+        // 복잡도 분석: 대부분의 단계는 상수 시간이 걸립니다
+        // v 주변의 e'과 e"의 순환 순서를 찾는 데는 v의 차수에 비례하는 시간이 걸립니다
+        // 교차점에서 발생할 수 있는 다른 경우들(두 에지의 교차 등)도 O(m) 시간이 걸립니다
+        // (여기서 m은 이벤트 포인트에 인접한 에지의 수) 
         public void AddDiagonal(HalfEdgeVertex lower, HalfEdgeVertex upper)
         {
             if (lower == null || upper == null)
@@ -131,6 +138,8 @@ namespace Monotone
                 upper = lower;
                 lower = temp;
             }
+            
+            
 
             /// -WARNING-
             /// inner, outer가 똑같다면 문제가 발생할 수 있다.

@@ -150,6 +150,35 @@ public static class HalfEdgeUtility
         return null;
     }
     
+    /// <summary>
+    /// 두 vertex를 가리키는 Edge들 중 같은 face를 가지는 Edge 두개를 반환한다.
+    /// </summary>
+    /// <param name="vertex1"></param>
+    /// <param name="vertex2"></param>
+    /// <returns></returns>
+    public static HalfEdge[] GetEdgesInner(HalfEdgeVertex vertex1, HalfEdgeVertex vertex2)
+    {
+        //Debug.Log("같은 페이스를 가진 엣지들 찾기 vertex1 : " + vertex1.Coordinate + " vertex2 : " + vertex2.Coordinate);
+        List<HalfEdge> vertex1Edges = GetEdgesAdjacentToAVertex(vertex1);
+        Vector2 v1Tov2Dir = (vertex2.Coordinate - vertex1.Coordinate).normalized;
+        
+        foreach (var edge in vertex1Edges)
+        {
+            Vector2 adjEdgePrevDir = (edge.prev.vertex.Coordinate - vertex1.Coordinate).normalized;
+            
+            // 양수면 v2가 v1의 왼쪽 음수면 v2가 v1의 오른쪽이라는 뜻이다. 
+            float crossValue = MyMath.Cross2D(v1Tov2Dir, adjEdgePrevDir);
+            
+            if (edge.incidentFace != null)
+            {
+                
+                faceSet.Add(edge.incidentFace);
+                edgeMap[edge.incidentFace] = edge; // face에 해당하는 edge를 저장
+            }
+        }
+        return null;
+    }
+    
     // 두 버텍스가 이미 연결되어 있는지 확인한다.
     public static bool IsConnectedVertex(HalfEdgeVertex vertex1, HalfEdgeVertex vertex2)
     {
