@@ -39,12 +39,14 @@ public static class HalfEdgeDebug
     public static IEnumerator TravelFaceVertex(HalfEdgeData data, HalfEdgeFace face, List<Monotone.Monotone.HalfEdgeDebugValue> point, float delay = 1)
     {
         List<HalfEdge> edges = face.GetOuterEdges();
+        Debug.Log("<color=green>"+"===============Face===============" +"</color>");
+
         for (int i = 0; i < edges.Count; i++)
         {
             point.Clear();
             point.Add(new Monotone.Monotone.HalfEdgeDebugValue(edges[i].vertex.Coordinate, Color.green));
             Debug.Log("<color=green>"+ edges[i].vertex.Coordinate + " "+ edges[i].next.vertex.Coordinate +  " " + edges[i].twin.vertex.Coordinate +"</color>");
-            Debug.Log("<color=green>"+ edges[i].incidentFace.GetHashCode() +"</color>");
+            Debug.Log("<color=green>"+ face.GetHashCode() +"</color>");
 
             yield return new WaitForSeconds(delay);
         }
@@ -96,16 +98,16 @@ public static class HalfEdgeDebug
                 Debug.Log("정상 Edge 좌표검사");
                 Debug.Log("prev : " + adjacentEdge.prev.vertex.Coordinate + " / cur : " + adjacentEdge.vertex.Coordinate + " / next : " + adjacentEdge.next.vertex.Coordinate);
                 Debug.Log("정상 Edge의 face");
-                if(adjacentEdge.incidentFace != null)
-                    Debug.Log(adjacentEdge.incidentFace.GetHashCode());
+                if(adjacentEdge.IncidentFace != null)
+                    Debug.Log(adjacentEdge.IncidentFace.GetHashCode());
                 else
                     Debug.Log("Face is Null");
 
                 Debug.Log("반대 Edge 좌표검사");
                 Debug.Log("prev : " + adjacentEdge.twin.prev.vertex.Coordinate + " / cur : " + adjacentEdge.twin.vertex.Coordinate + " / next : " + adjacentEdge.twin.next.vertex.Coordinate);
                 Debug.Log("반대 Edge의 face");
-                if(adjacentEdge.twin.incidentFace != null)
-                    Debug.Log(adjacentEdge.twin.incidentFace.GetHashCode());
+                if(adjacentEdge.twin.IncidentFace != null)
+                    Debug.Log(adjacentEdge.twin.IncidentFace.GetHashCode());
                 else
                     Debug.Log("Face is Null");
             }

@@ -7,6 +7,14 @@ using UnityEngine;
 
 namespace Monotone
 {
+    [Serializable]
+    public enum GeometryOperationType
+    {
+        INTERSECTION,
+        UNION,
+        DIFFERENCE,
+        XOR
+    }
     [System.Serializable]
     public struct PolygonLine
     {
@@ -20,10 +28,11 @@ namespace Monotone
     }
     public class MonotoneTest : MonoBehaviour
     {
-        
+        [SerializeField] private GeometryOperationType operationType;
+        public GeometryOperationType OperationType => operationType;
+
         [SerializeField] public List<TransformGroup> vertexs = new List<TransformGroup>();
-        //public List<PolygonLine> _lines = new List<PolygonLine>();
-        
+
         public TextMeshPro tmppropab;
         private HalfEdgeData EdgeData;
         private List<Monotone.HalfEdgeDebugValue> _halfEdgeDebugValue = new List<Monotone.HalfEdgeDebugValue>();
@@ -37,7 +46,11 @@ namespace Monotone
 
         [SerializeField] private float monotoneDelay = 0.5f;
         [SerializeField] private float travelDelay = 0.1f;
+        [SerializeField] private float travelWaitDelay = 0.1f;
         [SerializeField] private float triangulationDelay = 0.3f;
+        [SerializeField] private bool InnerMonotone = true;
+        [SerializeField] private bool triangulationInner = true;
+        [SerializeField] private bool vertexTypeOuter = true;
         
         [ShowInInspector]
         public int VertexCount
@@ -70,10 +83,21 @@ namespace Monotone
                 return EdgeData.faces.Count;
             }
         }
+
+        private MeshRenderer _meshRenderer;
+        private MeshFilter _meshFilter;
         private void Awake()
         {
+            _meshRenderer = GetComponent<MeshRenderer>();
+            _meshFilter = GetComponent<MeshFilter>();
             InitPolygon();
-            StartCoroutine(Monotone.MonotoneTriangulation(EdgeData, _halfEdgeDebugValue,monotoneDelay, travelDelay, triangulationDelay));
+            StartCoroutine(Monotone.MonotoneTriangulation(EdgeData, _halfEdgeDebugValue, InnerMonotone, triangulationInner, monotoneDelay, travelDelay, travelWaitDelay, triangulationDelay));
+        }
+
+        private void Update()
+        {
+            // Mesh mesh = HalfEdgeUtility.GetMesh(EdgeData, operationType);
+            // _meshFilter.mesh = mesh;
         }
 
         public void InitPolygon()
@@ -97,7 +121,7 @@ namespace Monotone
             vertices = EdgeData.vertices;
             List<HalfEdge> edges = new List<HalfEdge>();
             edges = EdgeData.edges;
-
+            List<HalfEdgeFace> faces = EdgeData.faces;
             for (int i = 0; i < edges.Count; i++)
             {
                 HalfEdge edge = edges[i];
@@ -105,34 +129,38 @@ namespace Monotone
                 Gizmos.color = Color.white;
                 Gizmos.DrawLine(vertex.Coordinate, edge.prev.vertex.Coordinate);
             }
-            
-            for (int i = 0; i < vertices.Count; i++)
+
+            foreach (var face in faces)
             {
-                HalfEdgeVertex vertex = vertices[i];
-                
-                switch (vertex.type)
-                {
-                    case HalfEdgeVertex.Vtype.START:
-                        Gizmos.color = Color.blue;
-                        break;
-                    case HalfEdgeVertex.Vtype.END:
-                        Gizmos.color = Color.red;
-
-                        break;
-                    case HalfEdgeVertex.Vtype.REGULAR:
-                        Gizmos.color = Color.green;
-
-                        break;
-                    case HalfEdgeVertex.Vtype.SPLIT:
-                        Gizmos.color = Color.magenta;
-
-                        break;
-                    case HalfEdgeVertex.Vtype.MERGE:
-                        Gizmos.color = Color.cyan;
-
-                        break;
-                }
-                MyGizmos.DrawWireCicle(vertex.Coordinate, 1, 30);
+                // List<HalfEdge> faceEdges = face.GetOuterEdges();
+                // foreach (var edge in faceEdges)
+                // {
+                //     HalfEdgeUtility.VertexHandleType type =
+                //         HalfEdgeUtility.DetermineType(edge.prev.vertex, edge.vertex, edge.next.vertex, vertexTypeOuter);
+                //     switch (type)
+                //     {
+                //         case HalfEdgeUtility.VertexHandleType.START:
+                //             Gizmos.color = Color.blue;
+                //             break;
+                //         case HalfEdgeUtility.VertexHandleType.END:
+                //             Gizmos.color = Color.red;
+                //
+                //             break;
+                //         case HalfEdgeUtility.VertexHandleType.REGULAR:
+                //             Gizmos.color = Color.green;
+                //
+                //             break;
+                //         case HalfEdgeUtility.VertexHandleType.SPLIT:
+                //             Gizmos.color = Color.magenta;
+                //
+                //             break;
+                //         case HalfEdgeUtility.VertexHandleType.MERGE:
+                //             Gizmos.color = Color.cyan;
+                //
+                //             break;
+                //     }
+                //     MyGizmos.DrawWireCicle(edge.vertex.Coordinate, 1, 30);
+                // }
             }
 
             foreach (var halfEdgeDebugValue in _halfEdgeDebugValue)
@@ -171,7 +199,7 @@ namespace Monotone
 
                 pro.transform.position = vertex.Coordinate;
                 pro.color = Color.white;
-                pro.text = vertex.type.ToString() + "\nAngle : " + MyMath.SignedAngle(v1, v2) + "\n" +
+                pro.text = "\nAngle : " + MyMath.SignedAngle(v1, v2) + "\n" +
                            vertex.Coordinate.ToString();
                 component.prefab = tmppropab;
             }
@@ -179,7 +207,7 @@ namespace Monotone
             {
                 pro.transform.position = vertex.Coordinate;
                 pro.color = Color.white;
-                pro.text = vertex.type.ToString() + "\n" +
+                pro.text = "\n" +
                            vertex.Coordinate.ToString();
                 component.prefab = tmppropab;
             }

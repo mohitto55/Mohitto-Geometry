@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Monotone;
@@ -19,6 +20,7 @@ public static class HalfEdgeUtility
         List<HalfEdge> BoundaryEdges = new List<HalfEdge>();
         HalfEdge startEdge = edge;
         HalfEdge searchEdge = edge;
+        Debug.Log(startEdge + " 바운더리");
 
         do
         {
@@ -73,7 +75,7 @@ public static class HalfEdgeUtility
 
         do
         {
-            if (searchEdge.incidentFace == face)
+            if (searchEdge.IncidentFace == face)
             {
                 //Debug.Log(vertex.Coordinate + " 똑같은 face를 찾았습니다");
                 return searchEdge;
@@ -128,11 +130,11 @@ public static class HalfEdgeUtility
 
         foreach (var edge in vertex1Edges)
         {
-            if (edge.incidentFace != null)
+            if (edge.IncidentFace != null)
             {
                 //Debug.Log("vertex1 엣지의 페이스 : " + edge.incidentFace.GetHashCode());
-                faceSet.Add(edge.incidentFace);
-                edgeMap[edge.incidentFace] = edge; // face에 해당하는 edge를 저장
+                faceSet.Add(edge.IncidentFace);
+                edgeMap[edge.IncidentFace] = edge; // face에 해당하는 edge를 저장
             }
         }
 
@@ -142,16 +144,16 @@ public static class HalfEdgeUtility
            //  if(edge.incidentFace != null)
            // // Debug.Log("vertex2 엣지의 페이스 : " + edge.incidentFace.GetHashCode());
 
-            if (edge.incidentFace != null && faceSet.Contains(edge.incidentFace))
+            if (edge.IncidentFace != null && faceSet.Contains(edge.IncidentFace))
             {
-                return new HalfEdge[] {edgeMap[edge.incidentFace], edge};
+                return new HalfEdge[] {edgeMap[edge.IncidentFace], edge};
             }
         }
         return null;
     }
     
     /// <summary>
-    /// 두 vertex를 가리키는 Edge들 중 같은 face를 가지는 Edge 두개를 반환한다.
+    /// 두 vertex를 가리키는 Edge들 중 같은 face를 가지는 Edge를 반환한다. 왼쪽방향
     /// </summary>
     /// <param name="vertex1"></param>
     /// <param name="vertex2"></param>
@@ -160,7 +162,6 @@ public static class HalfEdgeUtility
     {
         //Debug.Log("같은 페이스를 가진 엣지들 찾기 vertex1 : " + vertex1.Coordinate + " vertex2 : " + vertex2.Coordinate);
         List<HalfEdge> v2Edges = GetEdgesAdjacentToAVertex(vertex2);
-        //v2Edges.AddRange(GetEdgesSpreadingFromVertex(vertex2));
         Vector2 v1Tov2 = (vertex2.Coordinate - vertex1.Coordinate);
 
         float minAngle = 100000;
@@ -241,7 +242,7 @@ public static class HalfEdgeUtility
         
         HalfEdge searchEdge = vertex.IncidentEdge;
         HalfEdge startEdge = searchEdge;
-
+        Debug.Log(vertex + " 버틱스");
         do
         {
             list.Add(searchEdge);
@@ -341,13 +342,22 @@ public static class HalfEdgeUtility
     /// <returns></returns>
     public static bool IsFaceCounterClockwise(HalfEdgeFace face)
     {
-        List<Vector2> vector2s = VerticesToVec(face.GetAdjacentVertices());
+        List<Vector2> vector2s = VerticesToVec2(face.GetAdjacentVertices());
         return MyMath.IsCounterClockwise(vector2s);
     }
 
-    public static List<Vector2> VerticesToVec(List<HalfEdgeVertex> vertices)
+    public static List<Vector2> VerticesToVec2(List<HalfEdgeVertex> vertices)
     {
         List<Vector2> vector2s = new List<Vector2>();
+        for (int i = 0; i < vertices.Count; i++)
+        {
+            vector2s.Add(vertices[i].Coordinate);
+        }
+        return vector2s;
+    }
+    public static List<Vector3> VerticesToVec3(List<HalfEdgeVertex> vertices)
+    {
+        List<Vector3> vector2s = new List<Vector3>();
         for (int i = 0; i < vertices.Count; i++)
         {
             vector2s.Add(vertices[i].Coordinate);
@@ -365,23 +375,32 @@ public static class HalfEdgeUtility
         }
         return vector2s;
     }
-    public static List<HalfEdge> DetermineVertexType(HalfEdgeFace face)
+    public static Dictionary<HalfEdge, VertexHandleType> DetermineVertexType(HalfEdgeFace face, ref Dictionary<HalfEdge, HalfEdgeUtility.VertexHandleType> typeTable)
     {
-        List<HalfEdge> ConnectedEdges = face.GetOuterEdges();
+        if (typeTable == null)
+            typeTable = new Dictionary<HalfEdge, VertexHandleType>();
+        
+        List<HalfEdge> ConnectedEdges = face.IncidentEdges.ToList();
         // 완성된 버텍스들을 순회하며 타입을 정한다.
         for (int i = 0; i < ConnectedEdges.Count; i++)
         {
-            int indexPrev = (i - 1 + ConnectedEdges.Count) % ConnectedEdges.Count;
-            int indexNext = (i + 1) % ConnectedEdges.Count;
             HalfEdge centerEdge = ConnectedEdges[i];
-            bool isOuter = true;
-            if (centerEdge.incidentFace != null && centerEdge.twin.incidentFace != null)
+            HalfEdge prevEdge = ConnectedEdges[i].prev;
+            HalfEdge nextEdge = ConnectedEdges[i].next;
+
+            bool isOuter = HalfEdgeUtility.CheckInnerCycle(centerEdge) > 0;
+            if (centerEdge.IncidentFace == null || centerEdge.twin.IncidentFace == null)
             {
                 isOuter = false;
-            } 
-            DetermineType(ConnectedEdges[indexPrev].vertex, ConnectedEdges[i].vertex, ConnectedEdges[indexNext].vertex, isOuter);
+            }
+            
+            if (!typeTable.ContainsKey(centerEdge))
+            {
+                VertexHandleType type = DetermineType(prevEdge.vertex, ConnectedEdges[i].vertex, nextEdge.vertex, true);
+                typeTable.Add(centerEdge, type);
+            }
         }
-        return ConnectedEdges;
+        return typeTable;
     }
     
     /// <summary>
@@ -429,8 +448,9 @@ public static class HalfEdgeUtility
 
         return leftEdge;
     }
-    public static void DetermineType(HalfEdgeVertex prev, HalfEdgeVertex cur, HalfEdgeVertex next, bool outer = true)
+    public static VertexHandleType DetermineType(HalfEdgeVertex prev, HalfEdgeVertex cur, HalfEdgeVertex next, bool outer = true)
     {
+        VertexHandleType vertexType;
         Vector2 v1 = prev.Coordinate - cur.Coordinate;
         Vector2 v2 = next.Coordinate - cur.Coordinate;
         // 폴리곤 내부에 있다면 반대로 수행시킨다.
@@ -467,41 +487,111 @@ public static class HalfEdgeUtility
         // 양방향 노드들이 자신보다 낮다면
         if ((compareBiggerPrevCur < 0 && compareBiggerNextCur < 0))
         {
-            if (angle >= 0) cur.type = HalfEdgeVertex.Vtype.START;
-            else if (angle <= 0) cur.type = HalfEdgeVertex.Vtype.SPLIT;
+            if (angle >= 0) vertexType = VertexHandleType.START;
+            else if (angle <= 0) vertexType = VertexHandleType.SPLIT;
             else
             {
-                cur.type = HalfEdgeVertex.Vtype.START;
+                vertexType = VertexHandleType.START;
             }
         }
         // 양방향 노드들이 자신보다 높다면
         else if ((compareBiggerPrevCur > 0 && compareBiggerNextCur > 0))
         {
             // 내부각이 180도 미만이고 
-            if (angle >= 0) cur.type = HalfEdgeVertex.Vtype.END;
-            else if (angle <= 0) cur.type = HalfEdgeVertex.Vtype.MERGE;
+            if (angle >= 0) vertexType = VertexHandleType.END;
+            else if (angle <= 0) vertexType = VertexHandleType.MERGE;
             else
             {
-                cur.type = HalfEdgeVertex.Vtype.END;
+                vertexType = VertexHandleType.END;
             }
         }
         // 하나는 아래, 하나는 위로 가는 버텍스로 스위치하지 않는다.
         else
         {
-            cur.type = HalfEdgeVertex.Vtype.REGULAR;
+            vertexType = VertexHandleType.REGULAR;
         }
 
         if (!outer)
         {
-            // if (cur.type == HalfEdgeVertex.Vtype.START)
-            // {
-            //     cur.type = HalfEdgeVertex.Vtype.SPLIT;
-            // }
-            // else if (cur.type == HalfEdgeVertex.Vtype.END)
-            // {
-            //     cur.type = HalfEdgeVertex.Vtype.MERGE;
-            // }
+            switch (vertexType)
+            {
+                // case VertexHandleType.SPLIT:
+                //     vertexType = VertexHandleType.START;
+                //     break;
+                // case VertexHandleType.MERGE:
+                //     vertexType = VertexHandleType.END;
+                //     break;
+                case VertexHandleType.START:
+                    vertexType = VertexHandleType.SPLIT;
+                    break;
+                case VertexHandleType.END:
+                    vertexType = VertexHandleType.MERGE;
+                    break;
+            }
         }
+        return vertexType;
+    }
+
+    public static Mesh GetMesh(HalfEdgeData data, GeometryOperationType operationType)
+    {
+        Mesh mesh = new Mesh();
+        Dictionary<HalfEdgeVertex, int> verticesIndexTable = new Dictionary<HalfEdgeVertex, int>();
+        for (int i = 0; i < data.vertices.Count; i++)
+        {
+            verticesIndexTable.Add(data.vertices[i], i);
+        }
+        
+        List<int> trianglesIndexList = new List<int>();
+        List<HalfEdgeFace> faces = data.faces;
+        for (int i = 0; i < faces.Count; i++)
+        {
+            HalfEdgeFace face = faces[i];
+            List<HalfEdge> outerEdges = face.GetOuterEdges();
+            if (outerEdges.Count == 3)
+            {
+                bool oper = false;
+                switch (operationType)
+                {
+                    case GeometryOperationType.INTERSECTION:
+                        if (face.shapes.Count % 2 == 0)
+                            oper = true;
+                        break;
+                    case GeometryOperationType.UNION:
+                        oper = true;
+                        break;
+                    case GeometryOperationType.DIFFERENCE:
+                        if (face.shapes.Count % 2 == 1)
+                            oper = true;
+                        break;
+                    case GeometryOperationType.XOR:
+                        if (face.shapes.Count == 1)
+                            oper = true;
+                        break;
+                }
+                if(oper)
+                    foreach (var edge in outerEdges)
+                    {
+                        trianglesIndexList.Add(verticesIndexTable[edge.vertex]);
+                    }
+            }
+        }
+        mesh.vertices = VerticesToVec3(data.vertices).ToArray();
+        if (trianglesIndexList.Count % 3 != 0)
+            return mesh;
+        
+        mesh.triangles = trianglesIndexList.ToArray();
+        mesh.RecalculateBounds();
+        mesh.RecalculateNormals();
+        mesh.RecalculateTangents();
+        return mesh;
+    }
+    public enum VertexHandleType
+    {
+        START,
+        END,
+        REGULAR,
+        SPLIT,
+        MERGE,
     }
 }
 

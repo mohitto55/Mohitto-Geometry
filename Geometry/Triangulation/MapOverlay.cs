@@ -43,24 +43,24 @@ public static class MapOverlay
 
         
         
-        
+        // 맵 오버레이에서 사용 내부, 외부 판별시 사용한다.
+        // 이벤트 포인트의 가장 왼쪽에 있는 DCEL을 저장한다.
         Dictionary<Point, Segment> slTable;
-        List<Point> points = Swewep_Line_Algorithm.LS.SweepIntersections(D, segments, out slTable,(segment, arg3) =>
+        List<Point> points = Swewep_Line_Algorithm.LS.SweepIntersections(segments, out slTable,(segments, arg3) =>
         {
-            Debug.Log("생성" + arg3.ToVector());
-            foreach (var VARIABLE in segment)
+            HalfEdgeVertex newVertex = new HalfEdgeVertex(new Vector2(arg3.x, arg3.y));
+            D.vertices.Add(newVertex);
+            foreach (var segment in segments)
             {
-                Debug.Log("교차선 : " + VARIABLE.ToString());
+                HalfEdge matchEdge = halfedgeDic[segment.num];
+                Debug.Log("Match : " + matchEdge);
+                D.AddDiagonal(matchEdge, newVertex);
+                foreach(var aedge in HalfEdgeUtility.GetEdgesAdjacentToAVertex(newVertex))
+                {
+                    Debug.Log("Edges Match : " + aedge);
+                }
             }
-            D.vertices.Add(new HalfEdgeVertex( new Vector2(arg3.x, arg3.y)));
         } );
-
-        Debug.Log("인털섹션 가장 왼쪽 점 찾기" + slTable.Count);
-        foreach (var VARIABLE in slTable)
-        {
-            Debug.Log(VARIABLE.Key.ToVector() + " SEGMENT : " + VARIABLE.Value.Start.ToVector() + " " + VARIABLE.Value.End.ToVector() );
-        }
-        
 
         // D를 탐색하여 O(S1, S2)의 경계 사이클을 결정한다.
         // 각 경계 사이클에 대해 노드가 생성되는 그래프 G를 생성한다. 
@@ -150,9 +150,7 @@ public static class MapOverlay
                             nearLeftEdge = nearLeftEdge.twin;
                             leftID = boundaryTable[nearLeftEdge];
                         }
-                        Debug.Log("Left ID " + leftID + " / Right ID : " + rightID);
                         graphG.Merge(leftID, rightID);
-                        Debug.Log(graphG);
                     }
                     else
                     {
@@ -174,13 +172,12 @@ public static class MapOverlay
             }
         }
         /// 6. for : each connected Component in G
-        Debug.Log(graphG);
         IEnumerable<List<HalfEdge>> connectedComponentNodes = graphG.GetConnectedItems();
         int k = 0;
         foreach (var connectedComponents in connectedComponentNodes)
         {
             // C를 해당 구성요소의 유일한 외부 경계 순환이라 하고
-            HalfEdge C = null;
+            HalfEdge onlyOuterComponent = null;
             Debug.LogWarning( k + "번쨰 시작");
             k++;
             foreach (HalfEdge component in connectedComponents)
@@ -188,12 +185,12 @@ public static class MapOverlay
                 float isOuter = HalfEdgeUtility.CheckInnerCycle(component);
                 if (isOuter >= 0)
                 {
-                    C = component;
+                    onlyOuterComponent = component;
                     Debug.LogWarning("Outer 컴포넌트 발견" + connectedComponents.Count);
                     break;
                 }
             }
-            if (C == null)
+            if (onlyOuterComponent == null)
             {
                 Debug.LogWarning("맵 오버레이 도중 유일한 Outer Component가 존재하지 않습니다.");
                 continue;
@@ -201,27 +198,22 @@ public static class MapOverlay
             
             // f를 C에 의해 경계 지어진 면이라 합니다
             // f에 대한 레코드를 생성하고
-            HalfEdgeFace F = C.incidentFace;
+            HalfEdgeFace F = onlyOuterComponent.IncidentFace;
             // C의 임의의 반변을 OuterComponent(f)로 설정하며
             // 구성요소 내의 각 Inner Cycle에 대한 포인터들로 구성된 리스트 InnerComponents(f)를 구성합니다
             // 구성요소의 각 내부 순환에 대해 IncidentFace(e)를 f로 설정합니다 (여기서 e는 순환의 임의의 반변)
-            foreach (HalfEdge component in connectedComponents)
+            foreach (HalfEdge innerComponent in connectedComponents)
             {
-                if(component == C)
+                if(innerComponent == onlyOuterComponent)
                     continue;
-                List<HalfEdge> innerEdges = HalfEdgeUtility.GetBoundaryEdges(component);
+                List<HalfEdge> innerEdges = HalfEdgeUtility.GetBoundaryEdges(innerComponent);
                 foreach (HalfEdge innerEdge in innerEdges)
                 {
-                    innerEdge.incidentFace = F;
+                    innerEdge.IncidentFace = F;
+                    innerEdge.twin.IncidentFace.shapes.UnionWith(F.shapes);
                 }
             }
         }
-        Debug.Log(points.Count);
-    }
-
-    public class GraphG
-    {
-        public int ID = 0;
-        public HalfEdge edge = null;
+        Debug.Log(graphG.ToString());
     }
 }

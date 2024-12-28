@@ -129,7 +129,7 @@ namespace Swewep_Line_Algorithm
 
                 // 스윕라인의 교차점을 구하는 문제
         // Plane안에 있는 Segment들을 넣는다.
-        public static List<Point> SweepIntersections(HalfEdgeData polygon, List<Segment> segments, out Dictionary<Point, Segment> slTable, Action<List<Segment>, Point> intersctionCallback = null)
+        public static List<Point> SweepIntersections(List<Segment> segments, out Dictionary<Point, Segment> slTable, Action<List<Segment>, Point> intersctionCallback = null)
         {
             // 맵 오버레이에서 사용 내부, 외부 판별시 사용한다.
             // 이벤트 포인트의 가장 왼쪽에 있는 DCEL을 저장한다.

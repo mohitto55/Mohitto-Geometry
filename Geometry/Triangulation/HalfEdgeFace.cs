@@ -7,13 +7,22 @@ namespace Monotone
     {
         public HalfEdge OuterComponent;
         public HalfEdge InnerComponent => OuterComponent.twin;
+
+        public HashSet<HalfEdge> IncidentEdges = new HashSet<HalfEdge>();
+
+        public HashSet<string> shapes = new HashSet<string>();
+
         public HalfEdgeFace()
         {
             this.OuterComponent = null;
+            shapes.Add(GetHashCode().ToString());
         }
-        public HalfEdgeFace(HalfEdge outerComponent)
+        public HalfEdgeFace(HalfEdgeFace face)
         {
-            this.OuterComponent = outerComponent;
+            if (face == null)
+                return;
+            this.OuterComponent = face.OuterComponent;
+            this.shapes.UnionWith(face.shapes);
         }
 
         public List<HalfEdge> GetOuterEdges()

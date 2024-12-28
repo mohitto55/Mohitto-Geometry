@@ -47,11 +47,6 @@ namespace Monotone
             
             AddDiagonal(vertex1, vertex2);
         }
-
-        public void AddEdge(HalfEdgeVertex v, HalfEdge edge)
-        {
-            
-        }
         
         public void AddPolygon(List<Vector2> points)
         {
@@ -75,12 +70,12 @@ namespace Monotone
                 HalfEdge left = new HalfEdge();
                 HalfEdge right = new HalfEdge();
 
-                left.incidentFace = face;
+                left.IncidentFace = face;
                 left.next = null;
                 left.vertex = vertex;
                 left.twin = right;
                 
-                right.incidentFace = null;
+                right.IncidentFace = null;
                 right.next = prevRightEdge;
                 right.vertex = null;
                 right.twin = left;
@@ -118,6 +113,39 @@ namespace Monotone
             face.OuterComponent = firstLeftEdge;
         }
 
+        public void AddDiagonal(HalfEdge edge, HalfEdgeVertex newVertex)
+        {
+            // leftEdge는 위로 rigtEdge는 아래로간다
+            HalfEdge rightEdge = edge;
+            HalfEdge leftEdge = edge.twin;
+
+            if (rightEdge.vertex.Coordinate.y > leftEdge.vertex.Coordinate.y)
+            {
+                HalfEdge temp = rightEdge;
+                rightEdge = leftEdge;
+                leftEdge = temp;
+            }
+            HalfEdgeVertex lowerVertex = rightEdge.vertex;
+            HalfEdgeVertex upperVertex = leftEdge.vertex;
+            //
+            // HalfEdge upperPrevEdge = rightEdge.prev;
+            // HalfEdge lowerNextEdge = leftEdge.next;
+            // upperVertex.IncidentEdge = leftEdge.next.twin;
+            //     
+            // upperPrevEdge.next = upperPrevEdge.twin;
+            // upperPrevEdge.twin.prev = upperPrevEdge;
+            //
+            // leftEdge.vertex = newVertex;
+            // leftEdge.next = rightEdge;
+            // newVertex.IncidentEdge = leftEdge;
+            //
+            // rightEdge.vertex = lowerVertex;
+            // rightEdge.prev = leftEdge;
+            // rightEdge.prev.next = rightEdge;
+            AddDiagonal(lowerVertex, newVertex, leftEdge, rightEdge);
+            AddDiagonal(newVertex, upperVertex);
+        }
+
         // 대각선추가
         // 정점 v 주변의 처리: v 주변의 반에지들의 순환 순서를 결정하기 위해 e'과 e"의 위치를 테스트합니다
         // 네 개의 반에지 쌍이 생기며, v에서 시계방향으로 연결됩니다
@@ -126,14 +154,14 @@ namespace Monotone
         // v 주변의 e'과 e"의 순환 순서를 찾는 데는 v의 차수에 비례하는 시간이 걸립니다
         // 교차점에서 발생할 수 있는 다른 경우들(두 에지의 교차 등)도 O(m) 시간이 걸립니다
         // (여기서 m은 이벤트 포인트에 인접한 에지의 수) 
-        public void AddDiagonal(HalfEdgeVertex lower, HalfEdgeVertex upper)
+        public void AddDiagonal(HalfEdgeVertex lower, HalfEdgeVertex upper, HalfEdge leftEdge = null, HalfEdge rightEdge = null)
         {
             if (lower == null || upper == null)
                 return;
-            if (HalfEdgeUtility.IsConnectedVertex(lower, upper))
-                return;
+            // if (HalfEdgeUtility.IsConnectedVertex(lower, upper))
+            //     return;
             
-            if (lower.IncidentEdge.vertex.Coordinate.y > upper.IncidentEdge.vertex.Coordinate.y)
+            if (lower.Coordinate.y > upper.Coordinate.y)
             {
                 HalfEdgeVertex temp = upper;
                 upper = lower;
@@ -142,43 +170,46 @@ namespace Monotone
             
             HalfEdge upperEdge = HalfEdgeUtility.GetEdgeBetweenVertices(lower, upper);
             HalfEdge lowerEdge = HalfEdgeUtility.GetEdgeBetweenVertices(upper, lower);
-            
+
+            bool isSameCycle = false;
             if (lowerEdge == null || upperEdge == null)
             {
+                isSameCycle = true;
                 Debug.LogWarning(upper.Coordinate + " " + lower.Coordinate + " 엣지가 없습니다");
-                return;
+                //return;
             }
-            
-            bool isSameCycle = HalfEdgeUtility.IsBoundaryCounterClockwise(upperEdge) ==
-                               HalfEdgeUtility.IsBoundaryCounterClockwise(lowerEdge);
-            Debug.Log(HalfEdgeUtility.IsBoundaryCounterClockwise(upperEdge) + " " + HalfEdgeUtility.IsBoundaryCounterClockwise(lowerEdge));
-            // if (!HalfEdgeUtility.IsFaceCounterClockwise(face))
+            else
+            {
+                isSameCycle = HalfEdgeUtility.IsBoundaryCounterClockwise(upperEdge) ==
+                              HalfEdgeUtility.IsBoundaryCounterClockwise(lowerEdge);
+                Debug.Log(HalfEdgeUtility.IsBoundaryCounterClockwise(upperEdge) + " " +
+                          HalfEdgeUtility.IsBoundaryCounterClockwise(lowerEdge));
+            }
+
+            // if (isSameCycle)
             // {
             //     HalfEdge temp = upperEdge;
             //     upperEdge = lowerEdge;
             //     lowerEdge = temp;
             // }
-            Debug.Log(lowerEdge + " / " + upperEdge);
-            Debug.LogWarning("엣지 추가before " + lowerEdge.incidentFace.GetHashCode() + " " + upperEdge.incidentFace.GetHashCode());
-
-            Debug.LogWarning("엣지 추가before " + lowerEdge + " " + upperEdge);
 
             
             // 왼쪽 원점을 아래쪽 오른쪽을 위로해서 각각 자체를 쌍둥이로 표현할 수 있다.
             // 대각선으로 할 새로운 edge를 만든다
-            HalfEdge leftEdge = new HalfEdge();
-            HalfEdge rightEdge = new HalfEdge();
+            // leftEdge는 위로 rigtEdge는 아래로간다
+            leftEdge = leftEdge == null ? new HalfEdge() : leftEdge;
+            rightEdge = rightEdge == null ? new HalfEdge() : rightEdge;
             leftEdge.vertex = upper;
             leftEdge.twin = rightEdge;
             leftEdge.prev = lowerEdge;
             leftEdge.next = upperEdge.next;
-            leftEdge.incidentFace = leftEdge.next.incidentFace;
+            leftEdge.IncidentFace = leftEdge.next.IncidentFace;
             
             rightEdge.vertex = lower;
             rightEdge.twin = leftEdge;
             rightEdge.prev = upperEdge;
             rightEdge.next = lowerEdge.next;
-            rightEdge.incidentFace = rightEdge.next.incidentFace;
+            rightEdge.IncidentFace = rightEdge.next.IncidentFace;
 
 
             // 새롭게 대각선을 만드니 이전 엣지들의 다음 vertex와 edge를 업데이트 해줘야한다.
@@ -192,21 +223,27 @@ namespace Monotone
             lower.IncidentEdge = rightEdge;
             upper.IncidentEdge = leftEdge;
 
-            leftEdge.incidentFace = leftEdge.next.incidentFace;
+            leftEdge.IncidentFace = leftEdge.next.IncidentFace;
             // 이전에 저장한 Edge가 InnerComponent일 가능성이 있기 떄문에 데이터 보장을 위해 이렇게 해준다.
-            leftEdge.incidentFace.OuterComponent = leftEdge;
+            if(leftEdge.IncidentFace != null)
+                leftEdge.IncidentFace.OuterComponent = leftEdge;
 
+            HalfEdgeFace rightFace = leftEdge.IncidentFace;
+            if (isSameCycle)
+            {
+                rightFace = new HalfEdgeFace(leftEdge.IncidentFace);
+                rightFace.OuterComponent = rightEdge;
+            }
             
-            HalfEdgeFace rightFace = isSameCycle ? new HalfEdgeFace { OuterComponent = rightEdge } : leftEdge.incidentFace;
             //Debug.Log("새로 만든 Face : <color=green>"+ rightFace.GetHashCode() +"</color>");
             HalfEdge current = rightEdge;
             int i = 0;
             do
             {
                 i++;
-                current.incidentFace = rightFace;
+                current.IncidentFace = rightFace;
                 current = current.next;
-            } while (current != rightEdge);
+            } while (current != null && current != rightEdge);
             
             
             if(isSameCycle)
@@ -217,18 +254,6 @@ namespace Monotone
             
             Debug.LogWarning("엣지 추가1 / " + leftEdge.prev + " / " +leftEdge + " / " + leftEdge.next);
             Debug.LogWarning("엣지 추가2 / " + rightEdge.prev + " / " +rightEdge + " / " + rightEdge.next);
-        }
-
-        protected bool IsIsolationVertex(HalfEdgeVertex vertex)
-        {
-            return vertex.IncidentEdge == null;
-        }
-        
-        // 대각선추가
-        // 시계 방향, 반시계 방향으로 이어졋는지 상관없이 vertex끼리 선을 잇는다.
-        public void AddDiagonal(HalfEdgeVertex lower, HalfEdgeVertex upper, HalfEdgeFace face)
-        {
-            
         }
     }
 }

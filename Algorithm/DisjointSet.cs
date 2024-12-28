@@ -75,7 +75,15 @@ public class DisjointSet<T>{
             return itemIdTable[item];
         }
     }
-    
+    public int GetRank(T item)
+    {
+        return GetRank(GetItemId(item));
+    }
+
+    public int GetRank(int id)
+    {
+        return 0 <= id && id < rank.Count ? rank[id] : 0;
+    }
     public int GetItemId(T item){
         if(!itemIdTable.ContainsKey(item)){
             itemIdTable.Add(item, itemIdTable.Count);
