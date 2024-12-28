@@ -91,7 +91,14 @@ namespace Monotone
             _meshRenderer = GetComponent<MeshRenderer>();
             _meshFilter = GetComponent<MeshFilter>();
             InitPolygon();
-            StartCoroutine(Monotone.MonotoneTriangulation(EdgeData, _halfEdgeDebugValue, InnerMonotone, triangulationInner, monotoneDelay, travelDelay, travelWaitDelay, triangulationDelay));
+            HalfEdge edge = EdgeData.edges[0];
+            HalfEdgeVertex newVertex = new HalfEdgeVertex(edge.vertex.Coordinate + Vector2.up * 2 + Vector2.left * 2);
+            
+            EdgeData.vertices.Add(newVertex);
+            Debug.Log("Ω√¿€" + EdgeData.edges[0]);
+            //EdgeData.InsertEdge(edge, newVertex);
+            EdgeData.UpdateEdge(EdgeData.edges[0], newVertex, EdgeData.edges[0].prev.vertex);
+            // StartCoroutine(Monotone.MonotoneTriangulation(EdgeData, _halfEdgeDebugValue, InnerMonotone, triangulationInner, monotoneDelay, travelDelay, travelWaitDelay, triangulationDelay));
         }
 
         private void Update()

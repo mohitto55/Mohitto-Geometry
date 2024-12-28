@@ -48,7 +48,7 @@ public static class MapOverlay
         Dictionary<Point, Segment> slTable;
         List<Point> points = Swewep_Line_Algorithm.LS.SweepIntersections(segments, out slTable,(segments, arg3) =>
         {
-            HalfEdgeVertex newVertex = new HalfEdgeVertex(new Vector2(arg3.x + 1, arg3.y));
+            HalfEdgeVertex newVertex = new HalfEdgeVertex(new Vector2(arg3.x + 1, arg3.y + 5));
             D.vertices.Add(newVertex);
             foreach (var segment in segments)
             {
