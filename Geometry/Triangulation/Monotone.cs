@@ -14,7 +14,7 @@ namespace Monotone
             MapOverlay.MonotoneOverlay(polygon);
             
             // yield return MakeMonotone(polygon, debugHalfEdgeDebug, monotoneDealy, innerMonotone);
-            // HalfEdgeData monotone = polygon;
+            //
             List<HalfEdgeFace> faces = new List<HalfEdgeFace>();
             
             for (int i = 0; i < polygon.faces.Count; i++)
@@ -22,18 +22,18 @@ namespace Monotone
                 HalfEdgeFace face = polygon.faces[i];
                 faces.Add(face);
             }
-            
+            //
             for (int i = 0; i < faces.Count; i++)
             {
                 yield return HalfEdgeDebug.TravelFaceVertex(polygon, faces[i], debugHalfEdgeDebug, travelDelay);
                 yield return new WaitForSeconds(travelWaitDelay);
             }
-            // // for (int i = 0; i < faces.Count; i++)
-            // // {
-            // //     Debug.Log("Æ®¶óÀÌ ¾Þ±Û");
-            // //     yield return MonotoneTriangulation(polygon, faces[i], debugHalfEdgeDebug, triangulationDelay);
-            // // } 
-            // HalfEdgeDebug.DebugHalfEdgeData(polygon);
+            // for (int i = 0; i < faces.Count; i++)
+            // {
+            //     Debug.Log("Æ®¶óÀÌ ¾Þ±Û");
+            //     yield return MonotoneTriangulation(polygon, faces[i], debugHalfEdgeDebug, triangulationDelay);
+            // } 
+            //HalfEdgeDebug.DebugHalfEdgeData(polygon);
             yield return null;
         }
 

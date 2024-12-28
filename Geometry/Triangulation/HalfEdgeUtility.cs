@@ -153,7 +153,7 @@ public static class HalfEdgeUtility
     }
     
     /// <summary>
-    /// 두 vertex를 가리키는 Edge들 중 같은 face를 가지는 Edge를 반환한다. 왼쪽방향
+    /// vertex2를 가리키는 Edge들 중 삽입하기 적절한 Edge를 반환한다. 왼쪽방향
     /// </summary>
     /// <param name="vertex1"></param>
     /// <param name="vertex2"></param>
@@ -256,7 +256,7 @@ public static class HalfEdgeUtility
             // if(searchEdge == vertex.IncidentEdge)
             //     Debug.Log("인접엣지 같은 엣지");
 
-        } while (searchEdge != startEdge);
+        } while (searchEdge != null && searchEdge.vertex == vertex && searchEdge != startEdge);
        // Debug.Log("인접엣지 찾기 종료");
         return list;
     }
@@ -396,7 +396,7 @@ public static class HalfEdgeUtility
             
             if (!typeTable.ContainsKey(centerEdge))
             {
-                VertexHandleType type = DetermineType(prevEdge.vertex, ConnectedEdges[i].vertex, nextEdge.vertex, true);
+                VertexHandleType type = DetermineType(prevEdge.vertex, ConnectedEdges[i].vertex, nextEdge.vertex, isOuter);
                 typeTable.Add(centerEdge, type);
             }
         }
@@ -404,7 +404,7 @@ public static class HalfEdgeUtility
     }
     
     /// <summary>
-    /// 사이클이 Innder인지 Outer인지 판별한다.
+    /// 사이클이 Inner인지 Outer인지 판별한다.
     /// 외부 순환(outer cycle)인 경우: 양수(> 0)
     /// 내부 순환(inner cycle)인 경우: 음수(< 0)
     /// </summary>
@@ -515,12 +515,12 @@ public static class HalfEdgeUtility
         {
             switch (vertexType)
             {
-                // case VertexHandleType.SPLIT:
-                //     vertexType = VertexHandleType.START;
-                //     break;
-                // case VertexHandleType.MERGE:
-                //     vertexType = VertexHandleType.END;
-                //     break;
+                case VertexHandleType.SPLIT:
+                    vertexType = VertexHandleType.START;
+                    break;
+                case VertexHandleType.MERGE:
+                    vertexType = VertexHandleType.END;
+                    break;
                 case VertexHandleType.START:
                     vertexType = VertexHandleType.SPLIT;
                     break;
