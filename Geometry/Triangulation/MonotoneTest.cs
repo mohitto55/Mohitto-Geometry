@@ -30,10 +30,14 @@ namespace Monotone
         
         private List<HalfEdgeVertex> vertices = new List<HalfEdgeVertex>();
         
-        [SerializeReference]
+        [SerializeReference, HideInInspector]
         private ListBehaviour<HalfEdgeVertex> vertexListCompoennt;
         Action<GenerateObject<HalfEdgeVertex, TextMeshPro>, HalfEdgeVertex, TextMeshPro> onUpdate;
         private GenerateObject<HalfEdgeVertex, TextMeshPro> generateObject;
+
+        [SerializeField] private float monotoneDelay = 0.5f;
+        [SerializeField] private float travelDelay = 0.1f;
+        [SerializeField] private float triangulationDelay = 0.3f;
         
         [ShowInInspector]
         public int VertexCount
@@ -69,7 +73,7 @@ namespace Monotone
         private void Awake()
         {
             InitPolygon();
-            StartCoroutine(Monotone.MonotoneTriangulation(EdgeData, _halfEdgeDebugValue));
+            StartCoroutine(Monotone.MonotoneTriangulation(EdgeData, _halfEdgeDebugValue,monotoneDelay, travelDelay, triangulationDelay));
         }
 
         public void InitPolygon()
@@ -105,7 +109,7 @@ namespace Monotone
             for (int i = 0; i < vertices.Count; i++)
             {
                 HalfEdgeVertex vertex = vertices[i];
-
+                
                 switch (vertex.type)
                 {
                     case HalfEdgeVertex.Vtype.START:

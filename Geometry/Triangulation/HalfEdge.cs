@@ -29,5 +29,12 @@ namespace Monotone
         {
             return prev?.vertex.Coordinate.ToString() + vertex?.Coordinate.ToString() + next?.vertex.Coordinate.ToString();
         }
+
+        public Vector2 ToVector2()
+        {
+            if(prev != null)
+                return vertex.Coordinate - prev.vertex.Coordinate;
+            return Vector2.zero;
+        }
     }
 }

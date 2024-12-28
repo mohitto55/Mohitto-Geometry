@@ -55,7 +55,7 @@ public static class HalfEdgeUtility
     /// <param name="vertex"></param>
     /// <param name="face"></param>
     /// <returns></returns>
-    public static HalfEdge GetEdgesHasSameFace(HalfEdgeVertex vertex, HalfEdgeFace face)
+    public static HalfEdge GetEdgeHasSameFace(HalfEdgeVertex vertex, HalfEdgeFace face)
     {
        // Debug.LogWarning("GetEdgesHasSameFace 페이스의 해쉬 : " + vertex.Coordinate + " " + face.GetHashCode());
         if (face == null)
@@ -156,27 +156,37 @@ public static class HalfEdgeUtility
     /// <param name="vertex1"></param>
     /// <param name="vertex2"></param>
     /// <returns></returns>
-    public static HalfEdge[] GetEdgesInner(HalfEdgeVertex vertex1, HalfEdgeVertex vertex2)
+    public static HalfEdge GetEdgeBetweenVertices(HalfEdgeVertex vertex1, HalfEdgeVertex vertex2)
     {
         //Debug.Log("같은 페이스를 가진 엣지들 찾기 vertex1 : " + vertex1.Coordinate + " vertex2 : " + vertex2.Coordinate);
-        List<HalfEdge> vertex1Edges = GetEdgesAdjacentToAVertex(vertex1);
-        Vector2 v1Tov2Dir = (vertex2.Coordinate - vertex1.Coordinate).normalized;
-        
-        foreach (var edge in vertex1Edges)
+        List<HalfEdge> v2Edges = GetEdgesAdjacentToAVertex(vertex2);
+        //v2Edges.AddRange(GetEdgesSpreadingFromVertex(vertex2));
+        Vector2 v1Tov2 = (vertex2.Coordinate - vertex1.Coordinate);
+
+        float minAngle = 100000;
+        HalfEdge answerEdge = null;
+        foreach (var edge in v2Edges)
         {
-            Vector2 adjEdgePrevDir = (edge.prev.vertex.Coordinate - vertex1.Coordinate).normalized;
-            
+            //Vector2 adjEdgePrevDir = (edge.next.vertex.Coordinate - edge.vertex.Coordinate).normalized;
             // 양수면 v2가 v1의 왼쪽 음수면 v2가 v1의 오른쪽이라는 뜻이다. 
-            float crossValue = MyMath.Cross2D(v1Tov2Dir, adjEdgePrevDir);
-            
-            if (edge.incidentFace != null)
+            float angle = MyMath.SignedAngle(edge.ToVector2(), v1Tov2);
+            angle = angle <= 0 ? 360 + angle : angle;
+            //Debug.Log("가까이오는 엣지 v1 :" + vertex1 +" v2: "+vertex2 + " / " + edge + " / Angle : " + angle );
+            if (angle < minAngle)
             {
-                
-                faceSet.Add(edge.incidentFace);
-                edgeMap[edge.incidentFace] = edge; // face에 해당하는 edge를 저장
+                minAngle = angle;
+                answerEdge = edge;
             }
         }
-        return null;
+        // Debug.Log("사이 엣지 찾기 : " + vertex1 + " / " + vertex2);
+        // if (answerEdge != null)
+        // {
+        //     Debug.Log("사이 엣지 " + answerEdge);
+        //     Debug.Log("답 " + answerEdge);
+        //
+        // }
+
+        return answerEdge;
     }
     
     // 두 버텍스가 이미 연결되어 있는지 확인한다.
@@ -226,10 +236,12 @@ public static class HalfEdgeUtility
     public static List<HalfEdge> GetEdgesAdjacentToAVertex(HalfEdgeVertex vertex)
     {
         List<HalfEdge> list = new List<HalfEdge>();
-        HalfEdge searchEdge = vertex.IncidentEdge;
         if (vertex.IncidentEdge == null)
             return list;
-        //Debug.Log(vertex.Coordinate + " " + searchEdge.prev.vertex.Coordinate + " 인접 엣지 찾기 시작");
+        
+        HalfEdge searchEdge = vertex.IncidentEdge;
+        HalfEdge startEdge = searchEdge;
+
         do
         {
             list.Add(searchEdge);
@@ -243,11 +255,43 @@ public static class HalfEdgeUtility
             // if(searchEdge == vertex.IncidentEdge)
             //     Debug.Log("인접엣지 같은 엣지");
 
-        } while (searchEdge != vertex.IncidentEdge);
+        } while (searchEdge != startEdge);
        // Debug.Log("인접엣지 찾기 종료");
         return list;
     }
 
+    /// <summary>
+    /// vertex로부터 퍼져나가는 Edge들을 반홚나다.
+    /// </summary>
+    /// <param name="vertex"></param>
+    /// <returns></returns>
+    public static List<HalfEdge> GetEdgesSpreadingFromVertex(HalfEdgeVertex vertex)
+    {
+        List<HalfEdge> list = new List<HalfEdge>();
+        
+        if (vertex.IncidentEdge == null)
+            return list;
+        
+        HalfEdge searchEdge = vertex.IncidentEdge;
+        searchEdge = searchEdge.twin;
+        HalfEdge startEdge = searchEdge;
+        do
+        {
+            list.Add(searchEdge);
+            if (searchEdge.prev.twin == null)
+            {
+                break;
+            }
+            // Debug.Log("현재 : " + searchEdge.prev.vertex.Coordinate +  " " + searchEdge.vertex.Coordinate + " "
+            //           + searchEdge.next.vertex.Coordinate);
+            searchEdge = searchEdge.prev.twin;
+            // if(searchEdge == vertex.IncidentEdge)
+            //     Debug.Log("인접엣지 같은 엣지");
+
+        } while (searchEdge != startEdge);
+        // Debug.Log("인접엣지 찾기 종료");
+        return list;
+    }
     /// <summary>
     /// 두 vertex에 모두 접근하고 있는 Edge들을 반환한다.
     /// </summary>
@@ -449,14 +493,14 @@ public static class HalfEdgeUtility
 
         if (!outer)
         {
-            if (cur.type == HalfEdgeVertex.Vtype.START)
-            {
-                cur.type = HalfEdgeVertex.Vtype.SPLIT;
-            }
-            else if (cur.type == HalfEdgeVertex.Vtype.END)
-            {
-                cur.type = HalfEdgeVertex.Vtype.MERGE;
-            }
+            // if (cur.type == HalfEdgeVertex.Vtype.START)
+            // {
+            //     cur.type = HalfEdgeVertex.Vtype.SPLIT;
+            // }
+            // else if (cur.type == HalfEdgeVertex.Vtype.END)
+            // {
+            //     cur.type = HalfEdgeVertex.Vtype.MERGE;
+            // }
         }
     }
 }

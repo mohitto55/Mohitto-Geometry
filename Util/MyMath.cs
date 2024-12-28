@@ -14,6 +14,11 @@ public static class MyMath
         }
         return angle;
     }
+    
+    public static float UnsignedAngle(Vector2 to, Vector2 from)
+    {
+        return Vector2.Angle(to, from);
+    }
 
     public static List<Vector2> GetVector2ListFromTransform(List<Transform> list)
     {

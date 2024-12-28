@@ -132,37 +132,6 @@ namespace Monotone
                 return;
             if (HalfEdgeUtility.IsConnectedVertex(lower, upper))
                 return;
-            if (lower.IncidentEdge.vertex.Coordinate.y < upper.IncidentEdge.vertex.Coordinate.y)
-            {
-                HalfEdgeVertex temp = upper;
-                upper = lower;
-                lower = temp;
-            }
-            
-            
-
-            /// -WARNING-
-            /// inner, outer가 똑같다면 문제가 발생할 수 있다.
-            HalfEdge[] edgesHasSameFace = HalfEdgeUtility.GetEdgesHasSameFace(lower, upper);
-            if (edgesHasSameFace == null)
-            {
-                Debug.LogWarning(lower.Coordinate + " " + upper.Coordinate +  " 같은 Face를 가진 Edge들을 찾지 못했습니다.");
-                return;
-            }
-            AddDiagonal(lower, upper, edgesHasSameFace[0].incidentFace);
-        }
-
-        protected bool IsIsolationVertex(HalfEdgeVertex vertex)
-        {
-            return vertex.IncidentEdge == null;
-        }
-        
-        // 대각선추가
-        // 시계 방향, 반시계 방향으로 이어졋는지 상관없이 vertex끼리 선을 잇는다.
-        public void AddDiagonal(HalfEdgeVertex lower, HalfEdgeVertex upper, HalfEdgeFace face)
-        {
-            if (lower == null || upper == null)
-                return;
             
             if (lower.IncidentEdge.vertex.Coordinate.y > upper.IncidentEdge.vertex.Coordinate.y)
             {
@@ -171,24 +140,25 @@ namespace Monotone
                 lower = temp;
             }
             
-            HalfEdge upperEdge = HalfEdgeUtility.GetEdgesHasSameFace(upper, face);
-            HalfEdge lowerEdge = HalfEdgeUtility.GetEdgesHasSameFace(lower, face);
+            HalfEdge upperEdge = HalfEdgeUtility.GetEdgeBetweenVertices(lower, upper);
+            HalfEdge lowerEdge = HalfEdgeUtility.GetEdgeBetweenVertices(upper, lower);
             
-            bool isSameCycle = HalfEdgeUtility.IsBoundaryCounterClockwise(upperEdge) ==
-                               HalfEdgeUtility.IsBoundaryCounterClockwise(lowerEdge);
-            Debug.Log(HalfEdgeUtility.IsBoundaryCounterClockwise(upperEdge) + " " + HalfEdgeUtility.IsBoundaryCounterClockwise(lowerEdge));
             if (lowerEdge == null || upperEdge == null)
             {
                 Debug.LogWarning(upper.Coordinate + " " + lower.Coordinate + " 엣지가 없습니다");
                 return;
             }
-
-            if (!HalfEdgeUtility.IsFaceCounterClockwise(face))
-            {
-                HalfEdge temp = upperEdge;
-                upperEdge = lowerEdge;
-                lowerEdge = temp;
-            }
+            
+            bool isSameCycle = HalfEdgeUtility.IsBoundaryCounterClockwise(upperEdge) ==
+                               HalfEdgeUtility.IsBoundaryCounterClockwise(lowerEdge);
+            Debug.Log(HalfEdgeUtility.IsBoundaryCounterClockwise(upperEdge) + " " + HalfEdgeUtility.IsBoundaryCounterClockwise(lowerEdge));
+            // if (!HalfEdgeUtility.IsFaceCounterClockwise(face))
+            // {
+            //     HalfEdge temp = upperEdge;
+            //     upperEdge = lowerEdge;
+            //     lowerEdge = temp;
+            // }
+            Debug.Log(lowerEdge + " / " + upperEdge);
             Debug.LogWarning("엣지 추가before " + lowerEdge.incidentFace.GetHashCode() + " " + upperEdge.incidentFace.GetHashCode());
 
             Debug.LogWarning("엣지 추가before " + lowerEdge + " " + upperEdge);
@@ -247,6 +217,18 @@ namespace Monotone
             
             Debug.LogWarning("엣지 추가1 / " + leftEdge.prev + " / " +leftEdge + " / " + leftEdge.next);
             Debug.LogWarning("엣지 추가2 / " + rightEdge.prev + " / " +rightEdge + " / " + rightEdge.next);
+        }
+
+        protected bool IsIsolationVertex(HalfEdgeVertex vertex)
+        {
+            return vertex.IncidentEdge == null;
+        }
+        
+        // 대각선추가
+        // 시계 방향, 반시계 방향으로 이어졋는지 상관없이 vertex끼리 선을 잇는다.
+        public void AddDiagonal(HalfEdgeVertex lower, HalfEdgeVertex upper, HalfEdgeFace face)
+        {
+            
         }
     }
 }
