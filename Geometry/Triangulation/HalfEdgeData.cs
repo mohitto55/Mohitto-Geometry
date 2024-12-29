@@ -113,7 +113,24 @@ namespace Monotone
             face.OuterComponent = firstLeftEdge;
         }
 
+        public void UpdateEdge(HalfEdge edge, HalfEdgeVertex newVertex)
+        {
+            HalfEdgeVertex originalVertex = edge.vertex;
+            if (originalVertex != null)
+            {
+                originalVertex.IncidentEdge = originalVertex?.IncidentEdge?.next?.twin;
+            }
+            edge.vertex = newVertex;
+            edge.twin.prev.vertex = newVertex;
+            HalfEdge rightBetweenEdge = HalfEdgeUtility.GetEdgeBetweenVertices(originalVertex, newVertex);
+            HalfEdge leftBetweenEdge = rightBetweenEdge == null ? edge.twin : rightBetweenEdge.next;
+            if (rightBetweenEdge == null)
+                rightBetweenEdge = edge.twin;
+            edge.next.prev = edge.prev;
+            edge.prev.prev = edge.prev;
 
+            edge.next = leftBetweenEdge;
+        }
         public void UpdateEdge(HalfEdge edge, HalfEdgeVertex prevVertex, HalfEdgeVertex newVertex)
         {
             Debug.Log("업데이트 시작" + edge);
@@ -146,7 +163,7 @@ namespace Monotone
             if (lowerEdge == null || upperEdge == null)
             {
                 Debug.LogWarning(upper.Coordinate + " " + lower.Coordinate + " 엣지가 없습니다");
-                isSameCycle = true;
+                isSameCycle = false;
             }
             else
             {
@@ -154,32 +171,50 @@ namespace Monotone
                  isSameCycle = HalfEdgeUtility.IsBoundaryCounterClockwise(upperEdge) ==
                                      HalfEdgeUtility.IsBoundaryCounterClockwise(lowerEdge);
             }
-            lowerEdge = lowerEdge == null ? leftEdge.prev : lowerEdge;
-            upperEdge = upperEdge == null ? rightEdge.prev : upperEdge;
+
+            if (leftEdge.vertex != null)
+            {
+                leftEdge.vertex.IncidentEdge = leftEdge.vertex?.IncidentEdge?.next?.twin;
+            }
+            if (rightEdge.vertex != null)
+            {
+                rightEdge.vertex.IncidentEdge = rightEdge.vertex?.IncidentEdge?.next?.twin;
+            }
             
             leftEdge.vertex = upper;
             leftEdge.twin = rightEdge;
-            leftEdge.prev = lowerEdge;
-            leftEdge.next = upperEdge.next;
-            leftEdge.IncidentFace = leftEdge.next.IncidentFace;
-            
+            leftEdge.prev = lowerEdge != null ? lowerEdge : leftEdge.prev;
+            leftEdge.next = upperEdge != null ? upperEdge.next : leftEdge.next;
+
+            if (leftEdge.next != null)
+            {
+                leftEdge.next.twin.vertex = upper;
+                leftEdge.IncidentFace = leftEdge.next.IncidentFace;
+            }
+
             rightEdge.vertex = lower;
             rightEdge.twin = leftEdge;
-            rightEdge.prev = upperEdge;
-            rightEdge.next = lowerEdge.next;
-            rightEdge.IncidentFace = rightEdge.next.IncidentFace;
+            rightEdge.prev = upperEdge != null ? upperEdge : rightEdge.prev;
+            rightEdge.next = lowerEdge != null ? lowerEdge.next : rightEdge.next;
+            
+            if (rightEdge.next != null)
+            {
+                rightEdge.next.twin.vertex = lower;
+                rightEdge.IncidentFace = rightEdge.next.IncidentFace;
+            }
 
             // 새롭게 대각선을 만드니 이전 엣지들의 다음 vertex와 edge를 업데이트 해줘야한다.
+            if (lowerEdge != null)
+            {
+                lowerEdge.next.prev = rightEdge;
+                lowerEdge.next = leftEdge;
+            }
 
-            rightEdge.next.prev = rightEdge;
-            rightEdge.next.twin.vertex = lower;
-            lowerEdge.next = leftEdge;
-            
-            leftEdge.next.prev = leftEdge;
-            leftEdge.next.twin.vertex = upper;
-            upperEdge.next = rightEdge;
-
-            
+            if (upperEdge != null)
+            {
+                upperEdge.next.prev = leftEdge;
+                upperEdge.next = rightEdge;
+            }
 
             // incidentEdge의 방향이 최대한 동일하게 한다.
             lower.IncidentEdge = rightEdge;
@@ -195,25 +230,21 @@ namespace Monotone
             {
                 rightFace = new HalfEdgeFace(leftEdge.IncidentFace);
                 rightFace.OuterComponent = rightEdge;
+                
+                HalfEdge current = rightEdge;
+                do
+                {
+                    current.IncidentFace = rightFace;
+                    current = current.next;
+                } while (current != null && current != rightEdge);
             }
             
             //Debug.Log("새로 만든 Face : <color=green>"+ rightFace.GetHashCode() +"</color>");
-            HalfEdge current = rightEdge;
-            do
-            {
-                current.IncidentFace = rightFace;
-                current = current.next;
-            } while (current != null && current != rightEdge);
+
             
             
             if(isSameCycle)
                 faces.Add(rightFace);
-                
-            edges.Add(leftEdge);
-            edges.Add(rightEdge);
-            
-            Debug.LogWarning("엣지 추가1 / " + leftEdge.prev + " / " +leftEdge + " / " + leftEdge.next);
-            Debug.LogWarning("엣지 추가2 / " + rightEdge.prev + " / " +rightEdge + " / " + rightEdge.next);
         }
         
         public void InsertEdge(HalfEdge edge, HalfEdgeVertex newVertex)
@@ -221,7 +252,8 @@ namespace Monotone
             // leftEdge는 위로 rigtEdge는 아래로간다
             HalfEdge rightEdge = edge;
             HalfEdge leftEdge = edge.twin;
-
+            HalfEdgeVertex nextV = edge.next.vertex;
+            
             if (rightEdge.vertex.Coordinate.y > leftEdge.vertex.Coordinate.y)
             {
                 HalfEdge temp = rightEdge;
@@ -231,8 +263,10 @@ namespace Monotone
             HalfEdgeVertex upperVertex = leftEdge.vertex;
             HalfEdgeVertex lowerVertex = rightEdge.vertex;
             Debug.Log("인설트 " + newVertex + " / " + upperVertex);
-            AddDiagonal(newVertex, upperVertex);
-            UpdateEdge(rightEdge, upperVertex, lowerVertex);
+            //AddDiagonal(newVertex, edge.vertex);
+            Debug.Log("인설트V " + edge.vertex);
+
+            UpdateEdge(edge, nextV);
         }
 
        
@@ -281,6 +315,10 @@ namespace Monotone
             rightEdge.next = leftEdge;
 
             UpdateEdge(rightEdge, upper, lower);
+            edges.Add(leftEdge);
+            edges.Add(rightEdge);
+            Debug.LogWarning("엣지 추가1 / " + leftEdge.prev + " / " +leftEdge + " / " + leftEdge.next);
+            Debug.LogWarning("엣지 추가2 / " + rightEdge.prev + " / " +rightEdge + " / " + rightEdge.next);
         }
     }
 }

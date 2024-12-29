@@ -48,18 +48,18 @@ public static class MapOverlay
         Dictionary<Point, Segment> slTable;
         List<Point> points = Swewep_Line_Algorithm.LS.SweepIntersections(segments, out slTable,(segments, arg3) =>
         {
-            HalfEdgeVertex newVertex = new HalfEdgeVertex(new Vector2(arg3.x + 1, arg3.y + 5));
-            D.vertices.Add(newVertex);
-            foreach (var segment in segments)
-            {
-                HalfEdge matchEdge = halfedgeDic[segment.num];
-
-                D.InsertEdge(matchEdge, newVertex);
-                foreach(var aedge in HalfEdgeUtility.GetEdgesAdjacentToAVertex(newVertex))
-                {
-                    Debug.Log("Edges Match : " + aedge);
-                }
-            }
+            // HalfEdgeVertex newVertex = new HalfEdgeVertex(new Vector2(arg3.x + 1, arg3.y + 5));
+            // D.vertices.Add(newVertex);
+            // foreach (var segment in segments)
+            // {
+            //     HalfEdge matchEdge = halfedgeDic[segment.num];
+            //
+            //     //D.InsertEdge(matchEdge, newVertex);
+            //     foreach(var aedge in HalfEdgeUtility.GetEdgesAdjacentToAVertex(newVertex))
+            //     {
+            //         Debug.Log("Edges Match : " + aedge);
+            //     }
+            // }
         } );
 
         // D를 탐색하여 O(S1, S2)의 경계 사이클을 결정한다.
@@ -80,7 +80,7 @@ public static class MapOverlay
 
             List<HalfEdge> innerEdges = HalfEdgeUtility.GetBoundaryEdges(innerComponent);
             List<HalfEdge> outerEdges = HalfEdgeUtility.GetBoundaryEdges(outerComponent);
-
+            
             int innerId = graphG.GetItemId(innerComponent);
             int outerId = graphG.GetItemId(outerComponent);
             foreach (HalfEdge edge in innerEdges)
@@ -126,12 +126,8 @@ public static class MapOverlay
                 if (halfedgeDic.ContainsKey(segment.num))
                 {
                     HalfEdge nearLeftEdge = halfedgeDic[segment.num];
-                    
-                    Debug.Log(holeLeftEdge.vertex.Coordinate + " 의 왼쪽 세그먼트 : " + leftVertexEnumerable.First().Value);
-                    Debug.Log(holeLeftEdge.vertex.Coordinate + " 의 왼쪽 엣지 : " + nearLeftEdge);
-                    Debug.Log("각도 " + HalfEdgeUtility.CheckInnerCycle(nearLeftEdge));
                     float isInner = HalfEdgeUtility.CheckInnerCycle(nearLeftEdge);
-                    
+
                     // 양수면 outer 음수면 inner
                     // 무조건 inner로 만들기
                     if (isInner > 0)
@@ -146,7 +142,6 @@ public static class MapOverlay
 
                         if (leftID == 0)
                         {
-                            Debug.Log("반대로");
                             nearLeftEdge = nearLeftEdge.twin;
                             leftID = boundaryTable[nearLeftEdge];
                         }
@@ -174,15 +169,19 @@ public static class MapOverlay
         /// 6. for : each connected Component in G
         IEnumerable<List<HalfEdge>> connectedComponentNodes = graphG.GetConnectedItems();
         int k = 0;
+        Debug.Log("connectedComponentNodes " + connectedComponentNodes.Count());
+
         foreach (var connectedComponents in connectedComponentNodes)
         {
             // C를 해당 구성요소의 유일한 외부 경계 순환이라 하고
             HalfEdge onlyOuterComponent = null;
-            Debug.LogWarning( k + "번쨰 시작");
+            Debug.LogWarning( k + "번쨰 시작" + connectedComponents.Count());
             k++;
             foreach (HalfEdge component in connectedComponents)
             {
                 float isOuter = HalfEdgeUtility.CheckInnerCycle(component);
+                Debug.LogWarning("Outer Value " + component + " / " + isOuter);
+
                 if (isOuter >= 0)
                 {
                     onlyOuterComponent = component;
@@ -195,7 +194,8 @@ public static class MapOverlay
                 Debug.LogWarning("맵 오버레이 도중 유일한 Outer Component가 존재하지 않습니다.");
                 continue;
             }
-            
+            Debug.Log("connectedComponents " + connectedComponents.Count);
+
             // f를 C에 의해 경계 지어진 면이라 합니다
             // f에 대한 레코드를 생성하고
             HalfEdgeFace F = onlyOuterComponent.IncidentFace;
@@ -207,10 +207,14 @@ public static class MapOverlay
                 if(innerComponent == onlyOuterComponent)
                     continue;
                 List<HalfEdge> innerEdges = HalfEdgeUtility.GetBoundaryEdges(innerComponent);
+                Debug.Log("innerComponent " + innerComponent + " " + innerEdges.Count);
+
                 foreach (HalfEdge innerEdge in innerEdges)
                 {
                     innerEdge.IncidentFace = F;
                     innerEdge.twin.IncidentFace.shapes.UnionWith(F.shapes);
+                    Debug.Log("IncidentFace " + innerEdge.IncidentFace.IncidentEdges.Count);
+
                 }
             }
         }

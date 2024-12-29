@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Geometry;
 using Monotone;
 using NUnit.Framework;
 using Swewep_Line_Algorithm;
 using Unity.VisualScripting;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public static class HalfEdgeUtility
 {
@@ -160,7 +162,6 @@ public static class HalfEdgeUtility
     /// <returns></returns>
     public static HalfEdge GetEdgeBetweenVertices(HalfEdgeVertex vertex1, HalfEdgeVertex vertex2)
     {
-        //Debug.Log("같은 페이스를 가진 엣지들 찾기 vertex1 : " + vertex1.Coordinate + " vertex2 : " + vertex2.Coordinate);
         List<HalfEdge> v2Edges = GetEdgesAdjacentToAVertex(vertex2);
         Vector2 v1Tov2 = (vertex2.Coordinate - vertex1.Coordinate);
 
@@ -168,25 +169,15 @@ public static class HalfEdgeUtility
         HalfEdge answerEdge = null;
         foreach (var edge in v2Edges)
         {
-            //Vector2 adjEdgePrevDir = (edge.next.vertex.Coordinate - edge.vertex.Coordinate).normalized;
             // 양수면 v2가 v1의 왼쪽 음수면 v2가 v1의 오른쪽이라는 뜻이다. 
             float angle = MyMath.SignedAngle(edge.ToVector2(), v1Tov2);
             angle = angle <= 0 ? 360 + angle : angle;
-            //Debug.Log("가까이오는 엣지 v1 :" + vertex1 +" v2: "+vertex2 + " / " + edge + " / Angle : " + angle );
             if (angle < minAngle)
             {
                 minAngle = angle;
                 answerEdge = edge;
             }
         }
-        // Debug.Log("사이 엣지 찾기 : " + vertex1 + " / " + vertex2);
-        // if (answerEdge != null)
-        // {
-        //     Debug.Log("사이 엣지 " + answerEdge);
-        //     Debug.Log("답 " + answerEdge);
-        //
-        // }
-
         return answerEdge;
     }
     
@@ -375,25 +366,28 @@ public static class HalfEdgeUtility
         }
         return vector2s;
     }
-    public static Dictionary<HalfEdge, VertexHandleType> DetermineVertexType(HalfEdgeFace face, ref Dictionary<HalfEdge, HalfEdgeUtility.VertexHandleType> typeTable)
+    public static Dictionary<HalfEdge, VertexHandleType> DetermineVertexType(HalfEdgeFace face, ref Dictionary<HalfEdge, VertexHandleType> typeTable)
     {
         if (typeTable == null)
             typeTable = new Dictionary<HalfEdge, VertexHandleType>();
         
         List<HalfEdge> ConnectedEdges = face.IncidentEdges.ToList();
+        Debug.Log("ConnectedEdges : " + ConnectedEdges.Count);
+
         // 완성된 버텍스들을 순회하며 타입을 정한다.
         for (int i = 0; i < ConnectedEdges.Count; i++)
         {
             HalfEdge centerEdge = ConnectedEdges[i];
-            HalfEdge prevEdge = ConnectedEdges[i].prev;
-            HalfEdge nextEdge = ConnectedEdges[i].next;
+            HalfEdge prevEdge = centerEdge.prev;
+            HalfEdge nextEdge = centerEdge.next;
 
-            bool isOuter = HalfEdgeUtility.CheckInnerCycle(centerEdge) > 0;
-            if (centerEdge.IncidentFace == null || centerEdge.twin.IncidentFace == null)
+            float innerCycle = HalfEdgeUtility.CheckInnerCycle(centerEdge);
+            bool isOuter = innerCycle > 0;
+            if (centerEdge.IncidentFace == null || centerEdge.twin.IncidentFace != null)
             {
                 isOuter = false;
             }
-            
+            Debug.Log("Type : " + centerEdge + " / " + isOuter.ToString() + " / " + innerCycle);
             if (!typeTable.ContainsKey(centerEdge))
             {
                 VertexHandleType type = DetermineType(prevEdge.vertex, ConnectedEdges[i].vertex, nextEdge.vertex, isOuter);
@@ -413,11 +407,16 @@ public static class HalfEdgeUtility
     public static float CheckInnerCycle(HalfEdge edge)
     {
         if (edge == null) return 0;
+        
+        return IsBoundaryCounterClockwise(edge) ? 1 : -1;
 
-        HalfEdge leftEdge = FindLeftmostEdgeInCycle(edge);
-
-        if (leftEdge == null) return 0;
-
+        // 예전 코드인데 무슨생각으로 만든걸까 아무 의미 없던 코드였다.
+        // HalfEdge leftEdge = FindLeftmostEdgeInCycle(edge);
+        // //IsBoundaryCounterClockwise()
+        //
+        // Debug.Log(edge + "의 가장 왼쪽" + leftEdge);
+        // if (leftEdge == null) return 0;
+        
         Vector2 e1 =  edge.vertex.Coordinate - edge.prev.vertex.Coordinate;
         Vector2 e2 =  edge.next.vertex.Coordinate - edge.vertex.Coordinate;
         return (e1.x * e2.y) - (e1.y * e2.x);
@@ -440,6 +439,11 @@ public static class HalfEdgeUtility
             if(searchEdge == null) return null;
             if(searchEdge.vertex.Coordinate.x < leftEdge.vertex.Coordinate.x)
             {
+                // if (MyMath.CompareFloat(searchEdge.vertex.Coordinate.x, leftEdge.vertex.Coordinate.x) == 0 && 
+                //     MyMath.CompareFloat(searchEdge.vertex.Coordinate.y, leftEdge.vertex.Coordinate.y) > 0)
+                // {
+                //     continue;
+                // }
                 leftEdge = searchEdge;
             }
             searchEdge = searchEdge.next;
@@ -515,12 +519,12 @@ public static class HalfEdgeUtility
         {
             switch (vertexType)
             {
-                case VertexHandleType.SPLIT:
-                    vertexType = VertexHandleType.START;
-                    break;
-                case VertexHandleType.MERGE:
-                    vertexType = VertexHandleType.END;
-                    break;
+                // case VertexHandleType.SPLIT:
+                //     vertexType = VertexHandleType.START;
+                //     break;
+                // case VertexHandleType.MERGE:
+                //     vertexType = VertexHandleType.END;
+                //     break;
                 case VertexHandleType.START:
                     vertexType = VertexHandleType.SPLIT;
                     break;
@@ -567,18 +571,33 @@ public static class HalfEdgeUtility
                         if (face.shapes.Count == 1)
                             oper = true;
                         break;
+                    case GeometryOperationType.NONE:
+                        oper = false;
+                        break;
                 }
-                if(oper)
+
+                if (oper)
+                {
                     foreach (var edge in outerEdges)
                     {
                         trianglesIndexList.Add(verticesIndexTable[edge.vertex]);
                     }
+                }
             }
         }
+        
         mesh.vertices = VerticesToVec3(data.vertices).ToArray();
         if (trianglesIndexList.Count % 3 != 0)
             return mesh;
-        
+
+        List<Color> colorList = new List<Color>();
+        for (int i = 0; i < mesh.vertices.Length; i++)
+        {
+            float value = (float)i / mesh.vertices.Length;
+            Color randColor = new Color(value, value, value);
+            colorList.Add(randColor);
+        }
+        mesh.colors = colorList.ToArray();
         mesh.triangles = trianglesIndexList.ToArray();
         mesh.RecalculateBounds();
         mesh.RecalculateNormals();

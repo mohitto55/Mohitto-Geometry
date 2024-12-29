@@ -22,7 +22,7 @@ namespace Monotone
                     incidentFace.IncidentEdges.Remove(this);
                 incidentFace = value;
                 if(incidentFace != null)
-                incidentFace.IncidentEdges.Add(this);
+                    incidentFace.IncidentEdges.Add(this);
             }
         }
         public HalfEdge next;

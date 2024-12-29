@@ -9,31 +9,31 @@ namespace Monotone
 {
     public static class Monotone
     {
-        public static IEnumerator MonotoneTriangulation(HalfEdgeData polygon, List<HalfEdgeDebugValue> debugHalfEdgeDebug, bool innerMonotone = true, bool triangulationInner = false, float monotoneDealy = 0.5f, float travelDelay = 0.1f,  float travelWaitDelay = 1f, float triangulationDelay = 0.3f)
+        public static IEnumerator MonotoneTriangulation(HalfEdgeData polygon, List<HalfEdgeDebugValue> debugHalfEdgeDebug, float monotoneDealy = 0.5f, float travelDelay = 0.1f,  float travelWaitDelay = 1f, float triangulationDelay = 0.3f)
         {
             MapOverlay.MonotoneOverlay(polygon);
             
-             yield return MakeMonotone(polygon, debugHalfEdgeDebug, monotoneDealy, innerMonotone);
-            //
-            List<HalfEdgeFace> faces = new List<HalfEdgeFace>();
+             yield return MakeMonotone(polygon, debugHalfEdgeDebug, monotoneDealy);
             
-            for (int i = 0; i < polygon.faces.Count; i++)
-            {
-                HalfEdgeFace face = polygon.faces[i];
-                faces.Add(face);
-            }
-            //
-            for (int i = 0; i < faces.Count; i++)
-            {
-                yield return HalfEdgeDebug.TravelFaceVertex(polygon, faces[i], debugHalfEdgeDebug, travelDelay);
-                yield return new WaitForSeconds(travelWaitDelay);
-            }
-            for (int i = 0; i < faces.Count; i++)
-            {
-                Debug.Log("Æ®¶óÀÌ ¾Þ±Û");
-                yield return MonotoneTriangulation(polygon, faces[i], debugHalfEdgeDebug, triangulationDelay);
-            } 
-            //HalfEdgeDebug.DebugHalfEdgeData(polygon);
+             List<HalfEdgeFace> faces = new List<HalfEdgeFace>();
+            
+             for (int i = 0; i < polygon.faces.Count; i++)
+             {
+                 HalfEdgeFace face = polygon.faces[i];
+                 faces.Add(face);
+             }
+             //
+             for (int i = 0; i < faces.Count; i++)
+             {
+                 yield return HalfEdgeDebug.TravelFaceVertex(polygon, faces[i], debugHalfEdgeDebug, travelDelay);
+                 yield return new WaitForSeconds(travelWaitDelay);
+             }
+             for (int i = 0; i < faces.Count; i++)
+             {
+                 Debug.Log("Æ®¶óÀÌ ¾Þ±Û");
+                 yield return MonotoneTriangulation(polygon, faces[i], debugHalfEdgeDebug, triangulationDelay);
+             } 
+            HalfEdgeDebug.DebugHalfEdgeData(polygon);
             yield return null;
         }
 
@@ -272,7 +272,7 @@ namespace Monotone
                 HandleVertex(edge, statusEdges, helperDic, typeTable, halfEdgeData);
             }
         }
-        public static IEnumerator MakeMonotone(HalfEdgeData halfEdgeData, List<HalfEdgeDebugValue> debugHalfEdgeDebug, float debugDelay = 0.5f, bool innerMonotone = true)
+        public static IEnumerator MakeMonotone(HalfEdgeData halfEdgeData, List<HalfEdgeDebugValue> debugHalfEdgeDebug, float debugDelay = 0.5f)
         {
             List<HalfEdgeFace> faces = new List<HalfEdgeFace>();
             for (int i = 0; i < halfEdgeData.faces.Count; i++)
@@ -281,7 +281,7 @@ namespace Monotone
             }
             for (int i = 0; i < faces.Count; i++)
             {
-                if (innerMonotone || faces[i].InnerComponent.IncidentFace == null)
+                if (faces[i].InnerComponent.IncidentFace == null)
                 {
                     yield return MakeMonotone(halfEdgeData, faces[i], debugHalfEdgeDebug, debugDelay);
                 }

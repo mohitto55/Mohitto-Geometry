@@ -13,7 +13,8 @@ namespace Monotone
         INTERSECTION,
         UNION,
         DIFFERENCE,
-        XOR
+        XOR,
+        NONE
     }
     [System.Serializable]
     public struct PolygonLine
@@ -48,8 +49,6 @@ namespace Monotone
         [SerializeField] private float travelDelay = 0.1f;
         [SerializeField] private float travelWaitDelay = 0.1f;
         [SerializeField] private float triangulationDelay = 0.3f;
-        [SerializeField] private bool InnerMonotone = true;
-        [SerializeField] private bool triangulationInner = true;
         [SerializeField] private bool vertexTypeOuter = true;
         
         [ShowInInspector]
@@ -91,20 +90,20 @@ namespace Monotone
             _meshRenderer = GetComponent<MeshRenderer>();
             _meshFilter = GetComponent<MeshFilter>();
             InitPolygon();
-            HalfEdge edge = EdgeData.edges[0];
-            HalfEdgeVertex newVertex = new HalfEdgeVertex(edge.vertex.Coordinate + Vector2.up * 2 + Vector2.left * 2);
-            
-            EdgeData.vertices.Add(newVertex);
-            Debug.Log("시작" + EdgeData.edges[0]);
-            //EdgeData.InsertEdge(edge, newVertex);
-            EdgeData.UpdateEdge(EdgeData.edges[0], newVertex, EdgeData.edges[0].prev.vertex);
-            // StartCoroutine(Monotone.MonotoneTriangulation(EdgeData, _halfEdgeDebugValue, InnerMonotone, triangulationInner, monotoneDelay, travelDelay, travelWaitDelay, triangulationDelay));
+            // HalfEdge edge = EdgeData.edges[0];
+            // HalfEdgeVertex newVertex = new HalfEdgeVertex(edge.vertex.Coordinate + Vector2.up * 2 + Vector2.left * 2);
+            //
+            // EdgeData.vertices.Add(newVertex);
+            // // Debug.Log("시작" + EdgeData.edges[0]);
+            // EdgeData.InsertEdge(edge, newVertex);
+            //EdgeData.UpdateEdge(edge, newVertex, edge.prev.vertex);
+            StartCoroutine(Monotone.MonotoneTriangulation(EdgeData, _halfEdgeDebugValue, monotoneDelay, travelDelay, travelWaitDelay, triangulationDelay));
         }
 
         private void Update()
         {
-            // Mesh mesh = HalfEdgeUtility.GetMesh(EdgeData, operationType);
-            // _meshFilter.mesh = mesh;
+            Mesh mesh = HalfEdgeUtility.GetMesh(EdgeData, operationType);
+            _meshFilter.mesh = mesh;
         }
 
         public void InitPolygon()
@@ -139,35 +138,35 @@ namespace Monotone
 
             foreach (var face in faces)
             {
-                // List<HalfEdge> faceEdges = face.GetOuterEdges();
-                // foreach (var edge in faceEdges)
-                // {
-                //     HalfEdgeUtility.VertexHandleType type =
-                //         HalfEdgeUtility.DetermineType(edge.prev.vertex, edge.vertex, edge.next.vertex, vertexTypeOuter);
-                //     switch (type)
-                //     {
-                //         case HalfEdgeUtility.VertexHandleType.START:
-                //             Gizmos.color = Color.blue;
-                //             break;
-                //         case HalfEdgeUtility.VertexHandleType.END:
-                //             Gizmos.color = Color.red;
-                //
-                //             break;
-                //         case HalfEdgeUtility.VertexHandleType.REGULAR:
-                //             Gizmos.color = Color.green;
-                //
-                //             break;
-                //         case HalfEdgeUtility.VertexHandleType.SPLIT:
-                //             Gizmos.color = Color.magenta;
-                //
-                //             break;
-                //         case HalfEdgeUtility.VertexHandleType.MERGE:
-                //             Gizmos.color = Color.cyan;
-                //
-                //             break;
-                //     }
-                //     MyGizmos.DrawWireCicle(edge.vertex.Coordinate, 1, 30);
-                // }
+                List<HalfEdge> faceEdges = face.GetOuterEdges();
+                foreach (var edge in faceEdges)
+                {
+                    HalfEdgeUtility.VertexHandleType type =
+                        HalfEdgeUtility.DetermineType(edge.prev.vertex, edge.vertex, edge.next.vertex, vertexTypeOuter);
+                    switch (type)
+                    {
+                        case HalfEdgeUtility.VertexHandleType.START:
+                            Gizmos.color = Color.blue;
+                            break;
+                        case HalfEdgeUtility.VertexHandleType.END:
+                            Gizmos.color = Color.red;
+                
+                            break;
+                        case HalfEdgeUtility.VertexHandleType.REGULAR:
+                            Gizmos.color = Color.green;
+                
+                            break;
+                        case HalfEdgeUtility.VertexHandleType.SPLIT:
+                            Gizmos.color = Color.magenta;
+                
+                            break;
+                        case HalfEdgeUtility.VertexHandleType.MERGE:
+                            Gizmos.color = Color.cyan;
+                
+                            break;
+                    }
+                    MyGizmos.DrawWireCicle(edge.vertex.Coordinate, 1, 30);
+                }
             }
 
             foreach (var halfEdgeDebugValue in _halfEdgeDebugValue)
