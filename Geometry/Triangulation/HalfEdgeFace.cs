@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Monotone
+namespace Geometry.DCEL
 {
     public class HalfEdgeFace
     {

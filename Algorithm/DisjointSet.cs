@@ -54,7 +54,7 @@ public class DisjointSet<T>{
     }
 
     /// <summary>
-    /// 같은 부모를 가지는지 확인
+    /// 같은 부모를 가지는지 확인하는 함수
     /// </summary>
     /// <param name="u"></param>
     /// <param name="v"></param>

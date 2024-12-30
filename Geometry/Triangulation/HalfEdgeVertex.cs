@@ -1,13 +1,7 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using Swewep_Line_Algorithm;
-using TMPro;
-using Unity.Mathematics;
-using Unity.VisualScripting;
 using UnityEngine;
 
-namespace Monotone
+namespace Geometry.DCEL
 {
     public class HalfEdgeVertex
     {

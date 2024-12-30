@@ -3,7 +3,7 @@ using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 
-namespace Monotone
+namespace Geometry.DCEL
 {
     public class HalfEdgeData
     {

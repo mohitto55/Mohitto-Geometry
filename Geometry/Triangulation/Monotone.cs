@@ -1,11 +1,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Monotone;
+using Geometry.DCEL;
 using UnityEditor.Build;
 using UnityEngine;
 
-namespace Monotone
+namespace Geometry.Monotone
 {
     public static class Monotone
     {
@@ -13,7 +13,7 @@ namespace Monotone
         {
             MapOverlay.MonotoneOverlay(polygon);
             
-             yield return MakeMonotone(polygon, debugHalfEdgeDebug, monotoneDealy);
+             yield return SplitPolygonIntoMonotone(polygon, debugHalfEdgeDebug, monotoneDealy);
             
              List<HalfEdgeFace> faces = new List<HalfEdgeFace>();
             
@@ -207,25 +207,7 @@ namespace Monotone
             yield return null;
         }
 
-        public class HalfEdgeDebugValue
-        {
-            public Vector2 value;
-            public Color color;
-            public HalfEdgeDebugValue(){}
-
-            public HalfEdgeDebugValue(Vector2 vector2)
-            {
-                value = vector2;
-                color = Color.white;
-            }
-            public HalfEdgeDebugValue(Vector2 vector2, Color color)
-            {
-                value = vector2;
-                this.color = color;
-            }
-        }
-
-        public static IEnumerator MakeMonotone(HalfEdgeData halfEdgeData, HalfEdgeFace face,
+        private static IEnumerator SplitFaceIntoMonotone(HalfEdgeData halfEdgeData, HalfEdgeFace face,
             List<HalfEdgeDebugValue> debugHalfEdgeDebug, float debugDelay = 0.5f)
         {
             MonotoneEdgeComparer monotoneEdgeComparer = new MonotoneEdgeComparer();
@@ -272,7 +254,15 @@ namespace Monotone
                 HandleVertex(edge, statusEdges, helperDic, typeTable, halfEdgeData);
             }
         }
-        public static IEnumerator MakeMonotone(HalfEdgeData halfEdgeData, List<HalfEdgeDebugValue> debugHalfEdgeDebug, float debugDelay = 0.5f)
+        
+        /// <summary>
+        /// 모든 Face들을 Monotone분할한다.
+        /// </summary>
+        /// <param name="halfEdgeData"></param>
+        /// <param name="debugHalfEdgeDebug"></param>
+        /// <param name="debugDelay"></param>
+        /// <returns></returns>
+        private static IEnumerator SplitPolygonIntoMonotone(HalfEdgeData halfEdgeData, List<HalfEdgeDebugValue> debugHalfEdgeDebug, float debugDelay = 0.5f)
         {
             List<HalfEdgeFace> faces = new List<HalfEdgeFace>();
             for (int i = 0; i < halfEdgeData.faces.Count; i++)
@@ -281,14 +271,11 @@ namespace Monotone
             }
             for (int i = 0; i < faces.Count; i++)
             {
-                if (faces[i].InnerComponent.IncidentFace == null)
-                {
-                    yield return MakeMonotone(halfEdgeData, faces[i], debugHalfEdgeDebug, debugDelay);
-                }
+                yield return SplitFaceIntoMonotone(halfEdgeData, faces[i], debugHalfEdgeDebug, debugDelay);
             }
         }
 
-        public static void HandleVertex(HalfEdge vertexEdge, SortedSet<HalfEdge> statusEdges,
+        private static void HandleVertex(HalfEdge vertexEdge, SortedSet<HalfEdge> statusEdges,
             Dictionary<HalfEdge, HalfEdge> helperDic, Dictionary<HalfEdge, HalfEdgeUtility.VertexHandleType> typeTable, HalfEdgeData halfEdgeData)
         {
             // 시작부분이니 상태추가
@@ -299,8 +286,6 @@ namespace Monotone
             if (type == HalfEdgeUtility.VertexHandleType.START)
             {
                 HalfEdge leftEdge = vertexEdge.LeftEdge();
-                Debug.Log("START");
-                Debug.Log(leftEdge);
                 statusEdges.Add(leftEdge);
 
                 HalfEdge helperVertex = FindHelper(leftEdge, helperDic);
@@ -335,7 +320,7 @@ namespace Monotone
             {
                 // 대각선 추가시 vertex의 우측 대각선이 변경될 수 있으므로 미리 정해놓는다.
                 HalfEdge rightEdge = vertexEdge.RightEdge();
-                HalfEdge leftEdge = FindLeftEdge(vertex, statusEdges);
+                HalfEdge leftEdge = FindAlmostLeftEdge(vertex, statusEdges);
 
                 HalfEdge leftHelperVertex = FindHelper(leftEdge, helperDic);
                 halfEdgeData.AddDiagonal(leftHelperVertex.vertex, vertex);
@@ -356,7 +341,7 @@ namespace Monotone
                 // right Edge와 가장 가까운 helper를 연결시켜 줫으니 rightEdge는 더이상 건드릴 필요 없다
                 statusEdges.Remove(rightEdge);
 
-                HalfEdge leftEdge = FindLeftEdge(vertex, statusEdges);
+                HalfEdge leftEdge = FindAlmostLeftEdge(vertex, statusEdges);
                 HalfEdge leftHelperVertex = FindHelper(leftEdge, helperDic);
                 if (leftHelperVertex != null && typeTable[leftHelperVertex] == HalfEdgeUtility.VertexHandleType.MERGE)
                 {
@@ -368,19 +353,15 @@ namespace Monotone
             // Refular은
             else if (type == HalfEdgeUtility.VertexHandleType.REGULAR)
             {
-                bool Inner = vertex.IncidentEdge.IncidentFace != null && vertex.IncidentEdge.twin.IncidentFace != null;
-
-                HalfEdgeFace face = vertex.IncidentEdge.IncidentFace.OuterComponent.IncidentFace != null
-                    ? vertex.IncidentEdge.IncidentFace.OuterComponent.IncidentFace
-                    : vertex.IncidentEdge.IncidentFace;
+                HalfEdgeFace face = vertexEdge.IncidentFace;
                 bool isRight = vertexEdge.PolygonInteriorLiesToTheRight(face);
-                isRight = Inner ? isRight : isRight;
+
                 if (isRight)
                 {
-                    HalfEdge prevEdge = vertex.IncidentEdge.prev;
-                    HalfEdge nextEdge = vertex.IncidentEdge.next;
-                    HalfEdge aboveEdge = prevEdge.vertex.Coordinate.y >= nextEdge.vertex.Coordinate.y ? vertex.IncidentEdge : nextEdge;
-                    HalfEdge belowEdge = aboveEdge == vertex.IncidentEdge ? nextEdge : vertex.IncidentEdge;
+                    HalfEdge prevEdge = vertexEdge.prev;
+                    HalfEdge nextEdge = vertexEdge.next;
+                    HalfEdge aboveEdge = prevEdge.vertex.Coordinate.y >= nextEdge.vertex.Coordinate.y ? vertexEdge : nextEdge;
+                    HalfEdge belowEdge = aboveEdge == vertexEdge ? nextEdge : vertexEdge;
                     HalfEdge helper = FindHelper(aboveEdge, helperDic);
                     if (helper != null && typeTable[helper] == HalfEdgeUtility.VertexHandleType.MERGE)
                     {
@@ -392,19 +373,16 @@ namespace Monotone
                 }
                 else
                 {
-                    Debug.Log("REGULAR");
-                    HalfEdge leftEdge = FindLeftEdge(vertex, statusEdges);
+                    HalfEdge leftEdge = FindAlmostLeftEdge(vertex, statusEdges);
                     
                     if (leftEdge == null)
                     {
                         return;
                     }
-                    Debug.Log("왼쪽" + leftEdge + " " + vertex);
                     statusEdges.Add(leftEdge);
                     HalfEdge helper = FindHelper(leftEdge, helperDic);
                     if (helper == null)
                         return;
-                    Debug.Log("왼쪽 헬퍼" + helper + " " + vertex);
 
                     if (typeTable[helper] == HalfEdgeUtility.VertexHandleType.MERGE)
                     {
@@ -417,7 +395,7 @@ namespace Monotone
         }
 
         // 컴페어를 통해 정점들을높이별로 정렬하고 Edge를 스윕 방법별로 정렬하는데 도움이 된다.
-        public class MonotoneVertexComparer : IComparer<HalfEdgeVertex>
+        private class MonotoneVertexComparer : IComparer<HalfEdgeVertex>
         {
             public int Compare(HalfEdgeVertex x, HalfEdgeVertex y)
             {
@@ -445,7 +423,7 @@ namespace Monotone
         }
 
         // 누가 가장 왼쪽에 있는지 확인한다
-        public class MonotoneEdgeComparer : IComparer<HalfEdge>
+        private class MonotoneEdgeComparer : IComparer<HalfEdge>
         {
             public int Compare(HalfEdge e1, HalfEdge e2)
             {
@@ -492,12 +470,16 @@ namespace Monotone
             }
         }
 
-        public static HalfEdge FindLeftEdge(HalfEdgeVertex vertex, SortedSet<HalfEdge> sortedEdges)
+        /// <summary>
+        /// 정점에서 가장 왼쪽으로 Ray를 쏠때 가장 가까운 Edge를 반환한다.
+        /// </summary>
+        /// <param name="vertex"></param>
+        /// <param name="sortedEdges"></param>
+        /// <returns></returns>
+        private static HalfEdge FindAlmostLeftEdge(HalfEdgeVertex vertex, SortedSet<HalfEdge> sortedEdges)
         {
             float minDst = float.MaxValue;
             HalfEdge leftEdge = null;
-            Debug.Log("=======================");
-
             foreach (HalfEdge edge in sortedEdges)
             {
                 HalfEdgeVertex p1 = edge.vertex;
@@ -536,7 +518,6 @@ namespace Monotone
 
                         minDst = distanceToEdge;
                         leftEdge = edge;
-                        Debug.Log("====" + minDst + " " + leftEdge.vertex);
                     }
                 }
             }
@@ -550,7 +531,7 @@ namespace Monotone
         }
 
         // 똑같은 가장 왼쪽 Edge를 가진 vertex들중 자신보다 높이있으면서 가장 낮게있는 vertex를 반환한다.
-        public static HalfEdge FindHelper(HalfEdge leftEdge, Dictionary<HalfEdge, HalfEdge> dic)
+        private static HalfEdge FindHelper(HalfEdge leftEdge, Dictionary<HalfEdge, HalfEdge> dic)
         {
             if (leftEdge == null)
             {
@@ -568,7 +549,7 @@ namespace Monotone
             return helperVertex;
         }
 
-        public static float DistanceEdgeAndPoint(Vector2 start, Vector2 end, Vector2 p)
+        private static float DistanceEdgeAndPoint(Vector2 start, Vector2 end, Vector2 p)
         {
             Vector2 edge = end - start;
             Vector2 startTop = p - start;

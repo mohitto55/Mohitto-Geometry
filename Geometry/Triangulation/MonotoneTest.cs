@@ -5,7 +5,7 @@ using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 
-namespace Monotone
+namespace Geometry.DCEL
 {
     [Serializable]
     public enum GeometryOperationType
@@ -36,7 +36,7 @@ namespace Monotone
 
         public TextMeshPro tmppropab;
         private HalfEdgeData EdgeData;
-        private List<Monotone.HalfEdgeDebugValue> _halfEdgeDebugValue = new List<Monotone.HalfEdgeDebugValue>();
+        private List<HalfEdgeDebugValue> _halfEdgeDebugValue = new List<HalfEdgeDebugValue>();
         
         private List<HalfEdgeVertex> vertices = new List<HalfEdgeVertex>();
         
@@ -97,7 +97,7 @@ namespace Monotone
             // // Debug.Log("Ω√¿€" + EdgeData.edges[0]);
             // EdgeData.InsertEdge(edge, newVertex);
             //EdgeData.UpdateEdge(edge, newVertex, edge.prev.vertex);
-            StartCoroutine(Monotone.MonotoneTriangulation(EdgeData, _halfEdgeDebugValue, monotoneDelay, travelDelay, travelWaitDelay, triangulationDelay));
+            StartCoroutine(Monotone.Monotone.MonotoneTriangulation(EdgeData, _halfEdgeDebugValue, monotoneDelay, travelDelay, travelWaitDelay, triangulationDelay));
         }
 
         private void Update()
