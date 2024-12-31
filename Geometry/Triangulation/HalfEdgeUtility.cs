@@ -160,19 +160,49 @@ namespace Geometry.DCEL
         {
             List<HalfEdge> v2Edges = GetEdgesAdjacentToAVertex(vertex2);
             Vector2 v1Tov2 = (vertex2.Coordinate - vertex1.Coordinate);
+            Vector2 v2Tov1 = (vertex1.Coordinate - vertex2.Coordinate);
 
             float minAngle = 100000;
             HalfEdge answerEdge = null;
-            foreach (var edge in v2Edges)
+            foreach (var v2Edge in v2Edges)
             {
                 // 양수면 v2가 v1의 왼쪽 음수면 v2가 v1의 오른쪽이라는 뜻이다. 
-                float angle = MyMath.SignedAngle(edge.ToVector2(), v1Tov2);
-                angle = angle <= 0 ? 360 + angle : angle;
-                if (angle < minAngle)
+                Vector2 v2Tov2Next = (v2Edge.prev.vertex.Coordinate - v2Edge.vertex.Coordinate);
+                float angle = MyMath.SignedAngle(v2Tov2Next, v2Tov1);
+                angle = angle <= -MyMath.KindaSmallNumber ? 361 + angle : angle;
+                
+                // if(v2Edge.vertex == vertex2)
+                //     continue;
+                
+                if (angle <= minAngle)
                 {
+                    // 정점을 정확히 나눌수 있는 Edge를 찾아야하는데 다른 경우들은 각도만 계산해도 나오지만 각도가 0일경우 Inner인지 Outer인지 확인할 수가 없다.
+                    // 
+                    // 각도가 0일떄는 바깥쪽
+                    if (MyMath.FloatZero(angle) || MyMath.FloatZero(angle - minAngle))
+                    {
+                        float isNextGoLeft = MyMath.CCW(vertex1.Coordinate, vertex2.Coordinate,
+                            v2Edge.next.vertex.Coordinate);
+                        if (!(isNextGoLeft == 1))
+                        {
+                            continue;
+                        }
+                    }
+                    
                     minAngle = angle;
-                    answerEdge = edge;
+                    answerEdge = v2Edge;
                 }
+            }
+
+            if (answerEdge != null)
+            {
+                float angle2 = MyMath.SignedAngle((answerEdge.prev.vertex.Coordinate - answerEdge.vertex.Coordinate),
+                    v2Tov1);
+                Debug.Log("ANGLE " + vertex1 + " " + vertex2 + " / " + minAngle + " " + angle2 + " " + answerEdge);
+            }
+            else
+            {
+                Debug.Log("ANGLE " + vertex1 + " " + vertex2 + " / is null" );
             }
 
             return answerEdge;

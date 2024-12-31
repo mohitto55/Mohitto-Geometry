@@ -4,6 +4,8 @@ using UnityEngine;
 
 public static class MyMath
 {
+
+    public static float KindaSmallNumber = 0.00005f;
     public static float SignedAngle(Vector2 to, Vector2 from)
     {
         float angle = Vector2.Angle(to, from);
@@ -33,7 +35,7 @@ public static class MyMath
     public static float Cross2D(Vector3 v1, Vector3 v2) => v1.x * v2.y - v1.y * v2.x;
     // 왼쪽이면 양수 우측이면 음수
     
-    public static bool FloatZero(float x) => Mathf.Abs(x) < 0.00005f;
+    public static bool FloatZero(float x) => Mathf.Abs(x) < KindaSmallNumber;
 
     /// <summary>
     /// a가 b보다 작으면 -1 크면 1 같으면 0을 반환합니다

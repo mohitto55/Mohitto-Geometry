@@ -33,6 +33,12 @@ namespace Geometry.Monotone
                  Debug.Log("∆Æ∂Û¿Ã æﬁ±€");
                  yield return MonotoneTriangulation(polygon, faces[i], debugHalfEdgeDebug, triangulationDelay);
              } 
+             
+             for (int i = 0; i < polygon.faces.Count; i++)
+             {
+                 yield return HalfEdgeDebug.TravelFaceVertex(polygon, polygon.faces[i], debugHalfEdgeDebug, travelDelay);
+                 yield return new WaitForSeconds(travelWaitDelay);
+             }
             HalfEdgeDebug.DebugHalfEdgeData(polygon);
             yield return null;
         }

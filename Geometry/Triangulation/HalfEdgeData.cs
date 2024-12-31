@@ -163,13 +163,16 @@ namespace Geometry.DCEL
             if (lowerEdge == null || upperEdge == null)
             {
                 Debug.LogWarning(upper.Coordinate + " " + lower.Coordinate + " 엣지가 없습니다");
-                isSameCycle = false;
+                //isSameCycle = false;
             }
             else
             {
+
                 // 두 엣지 모두 inner 또는 outer인데다 face가 같다면 똑같은 폴리곤을 가른다는 뜻이므로 face를 하나더 만들어야한다.
                  isSameCycle = HalfEdgeUtility.IsBoundaryCounterClockwise(upperEdge) ==
                                      HalfEdgeUtility.IsBoundaryCounterClockwise(lowerEdge);
+                 
+                 Debug.LogWarning("로그로그 + " + isSameCycle.ToString() + " / " + upperEdge + " " + lowerEdge);
             }
 
             if (leftEdge.vertex != null)
@@ -230,19 +233,16 @@ namespace Geometry.DCEL
             {
                 rightFace = new HalfEdgeFace(leftEdge.IncidentFace);
                 rightFace.OuterComponent = rightEdge;
-                
-                HalfEdge current = rightEdge;
-                do
-                {
-                    current.IncidentFace = rightFace;
-                    current = current.next;
-                } while (current != null && current != rightEdge);
             }
-            
-            //Debug.Log("새로 만든 Face : <color=green>"+ rightFace.GetHashCode() +"</color>");
+            HalfEdge current = rightEdge;
+            do
+            {
+                current.IncidentFace = rightFace;
+                current = current.next;
+            } while (current != null && current != rightEdge);
 
-            
-            
+            Debug.LogWarning("엣지 추가1 / " + leftEdge.prev + " / " +leftEdge + " / " + leftEdge.next + " SameCycle : "  + isSameCycle);
+            Debug.LogWarning("엣지 추가2 / " + rightEdge.prev + " / " +rightEdge + " / " + rightEdge.next + " SameCycle : "  + isSameCycle);
             if(isSameCycle)
                 faces.Add(rightFace);
         }
@@ -317,8 +317,6 @@ namespace Geometry.DCEL
             UpdateEdge(rightEdge, upper, lower);
             edges.Add(leftEdge);
             edges.Add(rightEdge);
-            Debug.LogWarning("엣지 추가1 / " + leftEdge.prev + " / " +leftEdge + " / " + leftEdge.next);
-            Debug.LogWarning("엣지 추가2 / " + rightEdge.prev + " / " +rightEdge + " / " + rightEdge.next);
         }
     }
 }
