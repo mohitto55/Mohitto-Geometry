@@ -162,8 +162,7 @@ namespace Geometry.DCEL
             bool isSameCycle = false;
             if (lowerEdge == null || upperEdge == null)
             {
-                Debug.LogWarning(upper.Coordinate + " " + lower.Coordinate + " 엣지가 없습니다");
-                //isSameCycle = false;
+                Debug.LogWarning(upper.Coordinate + " " + lower.Coordinate + " 엣지가 없습니다"); 
             }
             else
             {
@@ -315,6 +314,7 @@ namespace Geometry.DCEL
             rightEdge.next = leftEdge;
 
             UpdateEdge(rightEdge, upper, lower);
+            
             edges.Add(leftEdge);
             edges.Add(rightEdge);
         }

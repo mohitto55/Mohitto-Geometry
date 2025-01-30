@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,15 +35,15 @@ namespace Geometry.Monotone
                  yield return MonotoneTriangulation(polygon, faces[i], debugHalfEdgeDebug, triangulationDelay);
              } 
              
-             for (int i = 0; i < polygon.faces.Count; i++)
-             {
-                 yield return HalfEdgeDebug.TravelFaceVertex(polygon, polygon.faces[i], debugHalfEdgeDebug, travelDelay);
-                 yield return new WaitForSeconds(travelWaitDelay);
-             }
+             // for (int i = 0; i < polygon.faces.Count; i++)
+             // {
+             //     yield return HalfEdgeDebug.TravelFaceVertex(polygon, polygon.faces[i], debugHalfEdgeDebug, travelDelay);
+             //     yield return new WaitForSeconds(travelWaitDelay);
+             // }
             HalfEdgeDebug.DebugHalfEdgeData(polygon);
             yield return null;
         }
-
+        
         public static IEnumerator MonotoneTriangulation(HalfEdgeData halfEdgeData, HalfEdgeFace monotoneFace, List<HalfEdgeDebugValue> debugHalfEdgeDebug, float delay = 1)
         {
              SortedSet<HalfEdge> sortedEdges = new SortedSet<HalfEdge>(new MonotoneEdgeTriangulationComparer());
@@ -54,7 +55,7 @@ namespace Geometry.Monotone
             // Stack으로는 중간에 있는 요소를 없앨 수 없어서 LinkedList로 한다.
             LinkedList<HalfEdge> s = new LinkedList<HalfEdge>();
             
-             Dictionary<HalfEdge, int> chainDic = new Dictionary<HalfEdge, int>();
+             Dictionary<HalfEdge, MonotoneChain> chainDic = new Dictionary<HalfEdge, MonotoneChain>();
             
              HalfEdge searchEdge = null;
              HalfEdge lastEdge = sortedEdges.Last();
@@ -70,10 +71,9 @@ namespace Geometry.Monotone
                  searchEdge = sortedEdges.First().next;
                  while (lastEdge != searchEdge && safeCount <= sortedEdges.Count)
                  {
-                     // 오른쪽이면 1 왼쪽이면 0
                      if (!chainDic.ContainsKey(searchEdge))
                      {
-                         chainDic.Add(searchEdge, 1);
+                         chainDic.Add(searchEdge, MonotoneChain.RIGHT);
                      }
                      searchEdge = searchEdge.next;
                      safeCount++;
@@ -102,7 +102,7 @@ namespace Geometry.Monotone
                  {
                      if (!chainDic.ContainsKey(searchEdge))
                      {
-                         chainDic.Add(searchEdge, 0);
+                         chainDic.Add(searchEdge, MonotoneChain.LEFT);
                      }
                      searchEdge = searchEdge.next;
                      safeCount++;
@@ -114,7 +114,7 @@ namespace Geometry.Monotone
                  {
                      if (!chainDic.ContainsKey(searchEdge))
                      {
-                         chainDic.Add(searchEdge, 1);
+                         chainDic.Add(searchEdge, MonotoneChain.RIGHT);
                      }
                      searchEdge = searchEdge.prev;
                      safeCount++;
@@ -145,14 +145,23 @@ namespace Geometry.Monotone
                  HalfEdge uj = sortedEdges.ElementAt(j);
                  debugHalfEdgeDebug.Clear();
                  debugHalfEdgeDebug.Add(new HalfEdgeDebugValue(uj.vertex.Coordinate));
-                 int sortedVertexChain = chainDic[uj];
+                 MonotoneChain sortedVertexChain = chainDic[uj];
                  yield return new WaitForSeconds(delay);
-                 int stackVertexChain = chainDic[s.First.Value];
+                 MonotoneChain stackVertexChain = chainDic[s.First.Value];
                  if (uj != null && sortedVertexChain == stackVertexChain && j < sortedEdges.Count-1)
                  {
                      s.AddFirst(uj);
                      // 각도가 음수가 아니면 internal이다.
                      float internalAngle = 0;
+
+                     // 체인이 내부로 도는지 확인하는 Condition이다.
+                     // 각도가 0또는 180이라 평행하면 외부로 돌고있다 판단해서 선분을 추가하지 않는다.
+                     Func<float, bool> isChainInternal = (float internalAngle) =>
+                     {
+                         return (internalAngle >= 0 && !(MyMath.FloatZero(180 - internalAngle) &&
+                                                        !MyMath.FloatZero(internalAngle)));
+                     };
+                     
                      do
                      {
                          if (s.Count <= 2)
@@ -161,9 +170,10 @@ namespace Geometry.Monotone
                          HalfEdge top1 = s.ElementAt(1);
                          HalfEdge top2 = s.ElementAt(2);
                          
-                         int chain = chainDic[uj];
+                         MonotoneChain chain = chainDic[uj];
                          // 왼쪽 체인이냐 오른쪽 체인이냐에따라
-                         if (chain == 0)
+                         // 오른쪽이면 1 왼쪽이면 0
+                         if (chain == MonotoneChain.LEFT)
                          {
                              internalAngle = MyMath.SignedAngle(top2.vertex.Coordinate - top1.vertex.Coordinate,
                                  top0.vertex.Coordinate - top1.vertex.Coordinate);
@@ -175,11 +185,12 @@ namespace Geometry.Monotone
                          }
                          
                          // 각도가 음수가 아니면 internal이다.
-                         if (internalAngle >= 0)
+                         // 또한 top 0, 1, 2이 모두 평행하다면 이어줄 필요는 없다.
+                         if (isChainInternal(internalAngle))
                          {
                              // Chain이 바뀌면 어차피 맨 마지막 요소는 이어져 있을 것이기 떄문에 없애준다.
                              halfEdgeData.AddDiagonal(top0.vertex, top2.vertex);
-                             
+
                              s.RemoveFirst();
                              s.RemoveFirst();
                              s.AddFirst(top0);
@@ -187,14 +198,10 @@ namespace Geometry.Monotone
                          debugHalfEdgeDebug.Clear();
                          debugHalfEdgeDebug.Add(new HalfEdgeDebugValue(uj.vertex.Coordinate));
                          yield return new WaitForSeconds(delay);
-                     } while (internalAngle >= 0 && s.Count > 2);
+                     } while (isChainInternal(internalAngle) && s.Count > 2);
                  }
                  else
                  {
-                     foreach (var VARIABLE in s)
-                     {
-                         Debug.Log("SV2 : " + VARIABLE.vertex.Coordinate);
-                     }
                      s.RemoveLast();
                      HalfEdge prev = s.First.Value;
                      while (s.Count >= 2)
@@ -562,6 +569,10 @@ namespace Geometry.Monotone
             return Mathf.Abs(MyMath.Cross2D(edge, startTop)) / edge.magnitude;
         }
         
-        
+        public enum MonotoneChain
+        {
+            LEFT,
+            RIGHT
+        }
     }
 }
