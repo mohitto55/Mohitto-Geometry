@@ -165,7 +165,7 @@ namespace Geometry.DCEL
                 
                             break;
                     }
-                    MyGizmos.DrawWireCicle(edge.vertex.Coordinate, 1, 30);
+                    MyGizmos.DrawWireCircle(edge.vertex.Coordinate, 1, 30);
                 }
             }
 
@@ -174,7 +174,7 @@ namespace Geometry.DCEL
                 if(halfEdgeDebugValue.color == Color.white)
                     halfEdgeDebugValue.color = Color.red;
                 Gizmos.color = halfEdgeDebugValue.color;
-                MyGizmos.DrawWireCicle(halfEdgeDebugValue.value, 2, 30);
+                MyGizmos.DrawWireCircle(halfEdgeDebugValue.value, 2, 30);
             }
             
             onUpdate = EventCallback;

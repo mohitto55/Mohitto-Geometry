@@ -163,12 +163,12 @@ void Part5MultiSpringMassGuage()
         {
             for (int i = 0; i < Nodes.Count - 1; i++)
             {
-                MyGizmos.DrawWireCicle(Nodes[i].position, 5, 30);
+                MyGizmos.DrawWireCircle(Nodes[i].position, 5, 30);
                 Gizmos.DrawLine(Nodes[i].position, Nodes[i + 1].position);
             }
 
             if (Nodes.Count > 0)
-                MyGizmos.DrawWireCicle(Nodes[Nodes.Count - 1].position, 5, 30);
+                MyGizmos.DrawWireCircle(Nodes[Nodes.Count - 1].position, 5, 30);
         }
     }
     void OnDrawGizmos()

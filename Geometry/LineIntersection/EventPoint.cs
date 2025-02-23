@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 
-namespace Swewep_Line_Algorithm
+namespace Sweep_Line_Algorithm
 {
     public class EventPoint
     {

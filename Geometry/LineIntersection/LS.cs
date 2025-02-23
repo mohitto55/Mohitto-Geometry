@@ -5,7 +5,7 @@ using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Swewep_Line_Algorithm
+namespace Sweep_Line_Algorithm
 {
     public class DebugPoint
     {

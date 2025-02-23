@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Swewep_Line_Algorithm
+namespace Sweep_Line_Algorithm
 {
     public class Point
     {
@@ -49,7 +49,7 @@ namespace Swewep_Line_Algorithm
         {
             return !(x == y);
         }
-
+        
         public override string ToString()
         {
             return Label + "(" + x + ", " + y + ")";

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
-using Swewep_Line_Algorithm;
+using Sweep_Line_Algorithm;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -47,7 +47,7 @@ namespace Geometry.DCEL
             // 맵 오버레이에서 사용 내부, 외부 판별시 사용한다.
             // 이벤트 포인트의 가장 왼쪽에 있는 DCEL을 저장한다.
             Dictionary<Point, Segment> slTable;
-            List<Point> points = Swewep_Line_Algorithm.LS.SweepIntersections(segments, out slTable, (segments, arg3) =>
+            List<Point> points = Sweep_Line_Algorithm.LS.SweepIntersections(segments, out slTable, (segments, arg3) =>
             {
                 // HalfEdgeVertex newVertex = new HalfEdgeVertex(new Vector2(arg3.x + 1, arg3.y + 5));
                 // D.vertices.Add(newVertex);

@@ -1,22 +1,31 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using MathNet.Numerics.RootFinding;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
 
 public class SplineInterpolation : MonoBehaviour
 {
-    [SerializeField] private HermitePath path1;
-    [SerializeField] private HermitePath path2;
+    [SerializeField] private SplinePathMono path1;
+    [SerializeField] private SplinePathMono path2;
     [SerializeField] private int divide = 1;
     [SerializeField] private bool drawPoint = false;
     [FormerlySerializedAs("drawHermiteLine")] [SerializeField] private bool drawLerpHermiteLine = true;
     [SerializeField] private bool drawDebugLine = true;
-    [SerializeField] private float split = 0;
+    [SerializeField] private float offsetDistance = 1;
+    [SerializeField] private bool offsetDraw;
 
-    public List<List<Vector2>> SplineInterporation(Spline spline1, Spline spline2, float spacing = 0.01f, int divide = 1)
+    private List<Vector2> intersectPoints = new List<Vector2>();
+    private void Awake()
     {
-        if (spacing <= 0)
+        intersectPoints = Intersection();
+    }
+
+    public List<List<Vector2>> SplineInterporation(ISpline spline1, ISpline spline2, float spacing = 0.01f, int divide = 1)
+    {
+        if (spacing <= 0 || spline1.GetLength(1) == 0 || spline2.GetLength(1) == 0)
             return new List<List<Vector2>>();
         
         Vector2[] path1 = spline1.CalculateEvenlySpacedPoints(0.01f);
@@ -64,8 +73,8 @@ public class SplineInterpolation : MonoBehaviour
             return;
         
         
-        List<List<Vector2>> lerpPaths = SplineInterporation(path1.Path, path2.Path, 0.01f, divide);
-
+        List<List<Vector2>> lerpPaths = SplineInterporation(path1.Spline, path2.Spline, 0.01f, divide);
+        
         if (drawDebugLine)
         {
             for (int i = 0; i < lerpPaths.Count; i++)
@@ -77,25 +86,86 @@ public class SplineInterpolation : MonoBehaviour
             }
         }
 
+        DrawHermite(0);
+        DrawHermite(1);
+        
+        DrawLerpHermite();
+        
+        //DrawIntersectionPoints();
+        DrawCurveOffset();
+        //DrawCurveRoots();
+        //DrawCurserProjection();
+    }
+
+    void DrawLerpHermite()
+    {
         float lerpValue = 0;
         for (int i = 0; i < divide; i++)
         {
             lerpValue += (float)1 / (divide + 1.0f);
             DrawHermite(lerpValue);
         }
-
-        //DrawHermite(split);
     }
-
+    void DrawIntersectionPoints()
+    {
+        intersectPoints = Intersection();
+        for (int i = 0; i < intersectPoints.Count; i++)
+        {
+            Gizmos.color = Color.cyan;
+            MyGizmos.DrawWireCircle(intersectPoints[i], 0.5f, 30);
+        }
+    }
     void DrawHermite(float t)
     {
-        Hermite hermite = Hermite.HermiteLerp((Hermite)path1.Path, (Hermite)path2.Path, t);
-
-        Vector2[] seg = hermite.GetSegment(0);
-        Hermite.GetBoundingBox(seg[0], seg[1] - seg[0], seg[2],seg[3] - seg[2]);
+        HermitePath hermite = Hermite.HermiteLerp((HermitePath)path1.Spline, (HermitePath)path2.Spline, t);
         hermite.DrawOnGizmo(drawLerpHermiteLine, drawPoint);
     }
 
+    void DrawCurveOffset()
+    {
+        HermitePath hermitePath = (HermitePath)path1.Spline;
+        hermitePath.Offset(offsetDistance).DrawOnGizmo(true, offsetDraw);
+        hermitePath.Offset(-offsetDistance).DrawOnGizmo(true, offsetDraw);
+    }
+
+    void DrawCurserProjection()
+    {
+        HermitePath hermitePath = (HermitePath)path1.Spline;
+        Event e = Event.current;
+        Vector2 mousePos = e.mousePosition;
+        // ¾À ºä¿¡¼­ GUI ÁÂÇ¥°è¸¦ ¿ùµå ÁÂÇ¥·Î º¯È¯
+        Ray ray = HandleUtility.GUIPointToWorldRay(mousePos);
+        Vector2 p = SplineUtility.PointProjection(hermitePath, ray.origin).p;
+        Gizmos.color = Color.red;
+        MyGizmos.DrawWireCircle(p, 2);
+    }
     
+    void DrawCurveRoots()
+    {
+        HermitePath hermitePath = (HermitePath)path1.Spline;
+        float[] roots = hermitePath.GetRoots();
+
+        Gizmos.color = Color.cyan;
+        for (int i = 0; i < roots.Length; i++)
+        {
+            MyGizmos.DrawWireCircle(hermitePath.GetPoint(roots[i]), 0.5f, 30);
+        }
+    }
+    List<Vector2> Intersection()
+    {
+        List<Vector2> IntersectionPoints = new List<Vector2>();
+        SplinePathBase splinePath1 = path1.Spline;
+        SplinePathBase splinePath2 = path2.Spline;
+        for (int i = 0; i < splinePath1.SegmentCount; i++)
+        {
+            for (int k = 0; k < splinePath2.SegmentCount; k++)
+            {
+                CubicBezier segment1 = splinePath1.GetSegment(i).GetCubicBezier();
+                CubicBezier segment2 = splinePath2.GetSegment(k).GetCubicBezier();
+                IntersectionPoints.AddRange(SplineUtility.IntersectionCurve(segment1, segment2));
+            }
+        }
+        return IntersectionPoints;
+    }
     
 }

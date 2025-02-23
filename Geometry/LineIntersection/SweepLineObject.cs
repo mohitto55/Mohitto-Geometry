@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Swewep_Line_Algorithm;
+using Sweep_Line_Algorithm;
 using Unity.VisualScripting;
 using Unity.VisualScripting.ReorderableList;
 using UnityEngine;
@@ -59,7 +59,7 @@ public class SweepLineObject : MonoBehaviour
         }
 
         debugPoint = new DebugPoint();
-        StartCoroutine(Swewep_Line_Algorithm.LS.SweepIntersections(Endpoints, intersectionPoints, debugPoint, DebugWaitSecond, false));
+        StartCoroutine(Sweep_Line_Algorithm.LS.SweepIntersections(Endpoints, intersectionPoints, debugPoint, DebugWaitSecond, false));
     }
 
     private void Update()
@@ -99,7 +99,7 @@ public class SweepLineObject : MonoBehaviour
         }
 
         debugPoint = new DebugPoint();
-        StartCoroutine(Swewep_Line_Algorithm.LS.SweepIntersections(Endpoints, intersectionPoints, debugPoint, DebugWaitSecond, false));
+        StartCoroutine(Sweep_Line_Algorithm.LS.SweepIntersections(Endpoints, intersectionPoints, debugPoint, DebugWaitSecond, false));
     }
 
     private void OnDrawGizmos()
@@ -112,9 +112,9 @@ public class SweepLineObject : MonoBehaviour
                 Segment lineSegment = new Segment(Transforms[i].p1.position, Transforms[i].p2.position);
                 endpoints.Add(lineSegment);
                 Gizmos.color = Color.red;
-                MyGizmos.DrawWireCicle(lineSegment.Start.ToVector(), PointRadius, 30);
+                MyGizmos.DrawWireCircle(lineSegment.Start.ToVector(), PointRadius, 30);
                 Gizmos.color = Color.blue;
-                MyGizmos.DrawWireCicle(lineSegment.End.ToVector(), PointRadius, 30);
+                MyGizmos.DrawWireCircle(lineSegment.End.ToVector(), PointRadius, 30);
                 Gizmos.color = Color.white;
                 Gizmos.DrawLine(lineSegment.Start.ToVector(), lineSegment.End.ToVector());
             }
@@ -124,7 +124,7 @@ public class SweepLineObject : MonoBehaviour
         for (int i = 0; i < intersectionPoints.Count; i++)
         {
             if(intersectionPoints[i] != null)
-                MyGizmos.DrawWireCicle(intersectionPoints[i].ToVector(), IntersectionPointRadius, 30);
+                MyGizmos.DrawWireCircle(intersectionPoints[i].ToVector(), IntersectionPointRadius, 30);
         }
 
         if (debugPoint != null)
@@ -133,7 +133,7 @@ public class SweepLineObject : MonoBehaviour
             {
                 Gizmos.color = Color.green;
                 Gizmos.DrawLine(new Vector3(0, debugPoint.p.y), new Vector3(width, debugPoint.p.y));
-                MyGizmos.DrawWireCicle(debugPoint.p, DebugPointRadius, 30);
+                MyGizmos.DrawWireCircle(debugPoint.p, DebugPointRadius, 30);
             }
         }
         Gizmos.color = Color.white;

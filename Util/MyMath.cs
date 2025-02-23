@@ -182,4 +182,25 @@ public static class MyMath
         //spoly = clockwise simple polygon;
         return spoly;
     }
+
+    public static Vector2 GetCircumCircleCenter(Vector2 p0, Vector2 p1, Vector2 p2)
+    {
+        // slope equation : m = dy/dx = (y_2 - y_2)/(x_2 - x_1)
+        // perpendicular slope equation : m' = -(dx/dy) = -(x_2 - x_1)/(y_2 - y_2)
+        
+        // y = mx+b
+        float m = -(p1.x - p0.x) / (p1.y - p0.y);
+        // y = nx+c
+        float n = -(p2.x - p1.x) / (p2.y - p1.y);
+        
+        Vector2 p0p1Center = Vector2.Lerp(p0, p1, 0.5f);
+        Vector2 p1p2Center = Vector2.Lerp(p1, p2, 0.5f);
+
+        float b = p0p1Center.y - m * p0p1Center.x;
+        float c = p1p2Center.y - n * p1p2Center.x;
+
+        float x = (c - b) / (m - n);
+        float y = m * x + b;
+        return new Vector2(x, y);
+    }
 }

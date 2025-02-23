@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Swewep_Line_Algorithm
+namespace Sweep_Line_Algorithm
 {
     public class Segment
     {
@@ -124,7 +124,12 @@ namespace Swewep_Line_Algorithm
             return MathUtility.FloatZero(result.x / direction.x - result.y / direction.y);
         }
         
-        // 교차점을 구하는 함수
+        
+        /// <summary>
+        /// 두 세그먼트의 교차점을 구합니다.
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
         public Point Intersection(Segment s)
         {
             if (s is null || !IsIntersectingSegments(s)) return null;
@@ -177,7 +182,7 @@ namespace Swewep_Line_Algorithm
 
         // 점 a, b를 지나는 직선과 점 c, d를 지나는 직선의 교차점 x를 반환한다.
         // 두 직선이 평행하면 false, 아니면 true를 반환한다.
-        public bool lineIntersection(Vector2 a, Vector2 b, Vector2 c, Vector2 d, ref Vector2 x)
+        public static bool StraightLineIntersection(Vector2 a, Vector2 b, Vector2 c, Vector2 d, ref Vector2 x)
         {
             // 부모
             float det = Vector3.Cross((Vector3)(b - a), (Vector3)(d - c)).z;
@@ -186,8 +191,16 @@ namespace Swewep_Line_Algorithm
             x = a + (b - a) * (Cross(c - a, d - c) / det);
             return true;
         }
+        public static bool LineIntersection(Vector2 a, Vector2 b, Vector2 c, Vector2 d, ref Vector2 x)
+        {
+            Segment seg1 = new Segment(a, b);
+            Segment seg2 = new Segment(c, d);
+            Point p = seg1.Intersection(seg2);
+            x = p != null ? new Vector2(p.x, p.y) : x;
+            return p != null;
+        }
 
-        public float Cross(Vector2 a, Vector2 b)
+        public static float Cross(Vector2 a, Vector2 b)
         {
             return Vector3.Cross((Vector3)a, (Vector3)b).z;
         }
@@ -238,7 +251,7 @@ namespace Swewep_Line_Algorithm
         // - 교점이 여러개일 경우 아무점이나 반환한다.
         bool segmentIntersection(Vector2 a, Vector2 b, Vector2 c, Vector2 d, ref Vector2 p){    
             //두 직선이 평행인 경우를 우선 예외로 처리한다.
-            if(!lineIntersection(a, b, c, d, ref p))        
+            if(!StraightLineIntersection(a, b, c, d, ref p))        
                 return paralleSegments(a, b, c, d, ref p);    
             //p가 두 선분에 포함되어 있는 경우에만 참을 반환한다.
             return inBoundingRectangle(p, a, b) && inBoundingRectangle(p, c, d);
